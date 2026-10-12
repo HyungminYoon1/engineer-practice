@@ -10,29 +10,34 @@ The 24-page original PDF was downloaded from the official viewer's PDF export. A
 
 | 2026 practical heading | Original learning content | Limits |
 | --- | --- | --- |
-| 요구사항 확인 | 요구사항·추적·UML | No complete requirements engineering course |
-| 데이터 입출력 구현 | 관계형 모델·키·정규화·트랜잭션·SQL | No DB administration lab |
-| 통합 구현 | 미들웨어·계약·JSON·재시도 | Concept prompts, not a deployed integration |
-| 서버 프로그램 구현 | 응집도·결합도·배치·언어 코드 | No arbitrary server code execution |
-| 인터페이스 구현 | 계약·JSON·통합 테스트·멱등성 | No external endpoint practice |
-| 화면 설계 | 프로토타입·화면 설계서·요구사항 | Concept comparisons, not a UI authoring course |
-| 애플리케이션 테스트 관리 | 단위·통합·화이트/블랙박스·경계·커버리지·성능·회귀 | No official scoring rubric |
-| SQL 응용 | JOIN·집계·NULL·서브쿼리·UNION·DDL/DML/DCL·트리거·윈도 함수 | Six executable SQLite families; procedural SQL covered as concepts only |
-| 소프트웨어 개발 보안 구축 | 인증·인가·삽입·XSS·해시·암호·솔트·방화벽 | Selected foundations, not all attacks/algorithms |
-| 프로그래밍 언어 활용 | C·Java·Python original output/trace families | 16 bounded families, not all language/library syntax |
-| 응용 SW 기초 기술 활용 | 프로세스·메모리·스케줄링·IP·TCP/UDP·DNS·OSI | Selected network/OS calculations |
-| 제품 SW 패키징 | 형상·CI·패키징·릴리즈 노트·설치·롤백·DRM | No actual packaging tool installation exercise |
+| 요구사항 확인 | 요구 검증·추적표 누락·UML 관계/include/extend | Longer combined models and system-analysis documents need more practice |
+| 데이터 입출력 구현 | 키·함수 종속·정규형·E-R 다대다·무손실 판정 | Multiple candidate keys, complex decompositions and physical designs are not exhaustive |
+| 통합 구현 | 계약·JSON·응답 유실·멱등 재시도 사례 | Not a deployed integration or all async recovery patterns |
+| 서버 프로그램 구현 | 응집/결합 사례·배치·다형성 코드 | Longer business/batch programs and multiple-pattern design need more practice |
+| 인터페이스 구현 | 필드 자료형/범위·계약·오류·재시도 | Not all monitoring and tool-based validation cases |
+| 화면 설계 | label 연결·빈 결과·실패 복구·색 외 안내·키보드 | Not all UI standards or multi-screen flow exercises |
+| 애플리케이션 테스트 관리 | 최소 결정 집합·MC/DC·병목·경계·회귀 | Not all paths/conditions, defect management or official grading |
+| SQL 응용 | SQLite 13유형·SQL 직접 작성·PostgreSQL DCL·MySQL 프로시저/함수 빈칸 | Dialects named; not arbitrary-query grading or every routine/optimization pattern |
+| 소프트웨어 개발 보안 구축 | 바인딩 수정·SSRF/경로 탐색/XXE/CSRF/DoS·암호 도구 목적 | Not all attack/crypto algorithms or long vulnerable programs |
+| 프로그래밍 언어 활용 | C·Java·Python 23유형·이진 탐색·연결 리스트·다형성·중첩 복사 | Not every library/data structure or long combined program |
+| 응용 SW 기초 기술 활용 | SRTF/RR 도착·은행원 안전·최장 프리픽스·페이지·서브넷 | Multi-resource synchronization and routing protocol/configuration cases are not exhaustive |
+| 제품 SW 패키징 | 기준선·승인·설치/릴리즈 누락·호환/복구 | Not all tool-based packaging or complete deployment specifications |
 
-All twelve headings have introductory concept coverage. This is **not** complete coverage of every detailed performance criterion. Questions/explanations are authored in this repository; no recovered exam paper, textbook scan or commercial answer key is included. Primary technical references are linked in `curriculum.js`; those large documents were used selectively, not claimed fully reviewed.
+All twelve headings have related concepts and directly reachable applied exercises after the re-audit. This is **not** complete coverage of every detailed performance criterion or evidence of a pass. Actual count: 134 concepts, 70 applied families, 583 bounded items. Questions/explanations are authored here; no recovered exam paper, textbook scan or commercial answer key is included. Primary references are linked in curriculum/casebook; large documents are used selectively, not claimed fully reviewed.
 
 ## Verification boundaries
 
-- All 128 C/Java/Python variants and 48 SQL variants: native output comparison before publishing. C11 avoids unsequenced mutation, pointer bounds and signed overflow. Java code compiles with `--release 17`. SQLite fixtures are frozen and ordering is explicit where relevant.
-- Forty calculations: fixed independently computed mathematical expectations tested across all five variants.
-- Eighty-eight term prompts: explicit accepted aliases, content/prerequisite integrity and grading tests; not an official examiner's full list of permitted answers.
+- All 184 C/Java/Python variants and 95 SQLite variants: native execution comparison before publishing. C11 avoids unsequenced mutation, pointer bounds and signed overflow. Java compiles with `--release 17`. SQLite fixtures are frozen and ordering is explicit where relevant. Written-SQL canonical statements are executed but submitted user input is not.
+- PostgreSQL DCL 5 and MySQL routine cases 10: author-completed statements/definitions executed offline in disposable, network-isolated containers; check permission effects and calls/return values. Official syntax/function/parameter documentation was also compared. A theoretical dialect label is not used to waive the execution gate.
+- Seventy-five calculation items across fifteen families: original reference calculations. Hand-drawn SRTF/RR totals and fixed normal-form/coverage/permissions references have independent tests; not every trace is compiler-instrumented or every conceivable input tested.
+- 134 term prompts: explicit accepted aliases, content/prerequisite integrity and grading tests; not an official examiner's full list of permitted answers.
 - Traces: authored educational state steps and code-line checks, not compiler-instrumented complete memory traces.
 - `2027–2029`: official criteria listing exists; detailed alignment is NOT_INSPECTED. Do not silently select that profile or claim next-year completeness.
 
-## Named-source inventory
+## Technical sources selected in this re-audit
 
-SENSE LAB and WEB LAB: repository inventory plus fully read selected architecture/README/decisions/checks and directly related implementation; unrelated tests/app features only PARTIAL review. New application: authored scope files and all core source modules reviewed. Official practical PDF: VERIFIED pages 11–24, PARTIAL document overall. Existing private notes and unrelated repositories: NOT_INSPECTED / outside scope.
+Q-Net practical PDF pages 11–24; SQLite window/trigger/transaction/CTE specifications; authors' Database System Concepts chapter 7 selected FD/3NF/BCNF sections; UC Berkeley CS186 normalization notes; MySQL 8.4 CREATE PROCEDURE/FUNCTION parameter/RETURNS/RETURN grammar; PostgreSQL GRANT/REVOKE syntax/privilege propagation; OWASP injection/SSRF/XXE/password/CSRF guidance; W3C form labeling; GNU mode bits; IETF ARP/CIDR. Selective technical-source review, not complete review of each linked manual. Own examples/conditions, not copied source examples.
+
+## Named-source inventory for the current re-audit
+
+engineer-practice: VERIFIED authoritative architecture/requirements/README, decisions/sources/verification and directly related core modules, added casebook/coverage, regression/content/storage/native test paths. WEB LAB: VERIFIED inventory, architecture/README/current decisions, selected catalog entry and tests/checks; PARTIAL repository overall (other apps' feature code is not re-audited). Official PDF: VERIFIED practical pages 11–24 and rendered page 11, PARTIAL whole document. 2027–2029 criteria: NOT_INSPECTED in detail. SENSE LAB/private course files/other services/Neon/user browser records: NOT_INSPECTED and unchanged this turn. Initial delivery's broader source inventory is historical, not current full audit evidence.

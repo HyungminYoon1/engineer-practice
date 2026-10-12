@@ -25,6 +25,7 @@ export function questionBody(question,{showTitle=true}={}) {
   fragment.append(el('p',{class:'question-prompt'},question.prompt));
   if(question.tables)fragment.append(el('div',{class:'fixture-tables'},question.tables.map(tableView)));
   const source=sourceView(question);if(source)fragment.append(source);
+  if(question.reference)fragment.append(referenceLink(question.reference));
   return fragment;
 }
 export function traceView(question) {

@@ -1,3 +1,4 @@
+import { caseConceptRows, caseReferences } from './casebook.js';
 export const groups = Object.freeze([
   {id:'code', name:'프로그래밍', color:'blue', subtitle:'값·참조·실행 순서'},
   {id:'db', name:'SQL · 데이터베이스', color:'green', subtitle:'행이 만들어지고 걸러지는 과정'},
@@ -5,6 +6,7 @@ export const groups = Object.freeze([
   {id:'dev', name:'개발 · 테스트 · 보안', color:'violet', subtitle:'요구사항부터 안전한 운영까지'},
 ]);
 export const references = Object.freeze({
+  ...caseReferences,
   exam:{label:'Q-Net · 정보처리기사',url:'https://www.q-net.or.kr/crf005.do?id=crf00503s02&jmCd=1320&jmInfoDivCcd=B0'},
   c:{label:'SEI CERT C · 배열·포인터',url:'https://wiki.sei.cmu.edu/confluence/display/c/ARR30-C.+Do+not+form+or+use+out-of-bounds+pointers+or+array+subscripts'},
   java:{label:'Java 언어 명세 · 클래스',url:'https://docs.oracle.com/javase/specs/jls/se17/html/jls-8.html'},
@@ -16,6 +18,14 @@ export const references = Object.freeze({
   security:{label:'OWASP · 보안 안내',url:'https://cheatsheetseries.owasp.org/'},
   uml:{label:'OMG · UML 명세',url:'https://www.omg.org/spec/UML/2.5.1/'},
   os:{label:'OSTEP · 운영체제 교재',url:'https://pages.cs.wisc.edu/~remzi/OSTEP/'},
+  design:{label:'Database System Concepts · 정규화',url:'https://www.db-book.com/slides-dir/PDF-dir/ch7.pdf'},
+  window:{label:'SQLite · 윈도 함수',url:'https://www.sqlite.org/windowfunctions.html'},
+  trigger:{label:'SQLite · 트리거',url:'https://www.sqlite.org/lang_createtrigger.html'},
+  transaction:{label:'SQLite · 트랜잭션',url:'https://www.sqlite.org/lang_transaction.html'},
+  unix:{label:'GNU · 파일 권한',url:'https://www.gnu.org/software/coreutils/manual/html_node/Numeric-Modes.html'},
+  csrf:{label:'OWASP · CSRF 방어',url:'https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html'},
+  arp:{label:'IETF · ARP',url:'https://www.rfc-editor.org/rfc/rfc826.html'},
+  routing:{label:'IETF · CIDR 라우팅',url:'https://www.rfc-editor.org/rfc/rfc4632.html'},
 });
 // Original concise explanations and prompts. Rows are concepts, not copied exam items.
 const rows = [
@@ -107,8 +117,32 @@ const rows = [
 ['drm','dev','디지털 권리 관리','디지털 콘텐츠의 사용 권한과 이용 조건을 기술적으로 관리하는 체계입니다.','허용된 사용자·기기·기간 등의 조건에 따라 콘텐츠 사용을 관리합니다.','암호화 기술 하나와 권한·정책을 포함한 관리 체계를 같은 의미로 보지 않습니다.','디지털 콘텐츠의 사용 권한과 이용 조건을 기술적으로 관리하는 체계의 약어는?',['DRM'],'authorization','exam'],
 ['trigger','db','트리거와 프로시저','트리거는 지정된 DB 사건에 따라 실행되고, 프로시저는 명시적 호출 등으로 실행하는 저장된 절차입니다.','행 변경을 감사 테이블에 남기는 INSERT 트리거를 구성할 수 있습니다.','문법과 실행 단위는 DBMS마다 다르며 SQLite는 일반적인 저장 프로시저를 지원하지 않습니다.','테이블의 INSERT·UPDATE·DELETE 같은 지정 사건에 반응해 자동 실행되는 DB 객체는?',['트리거','trigger'],'sql-dml,transaction','exam'],
 ['sql-window','db','윈도 함수','집계나 순위를 행 집합의 구간에 적용하면서 개별 행을 결과에 유지합니다.','팀별 순위를 각 회원 행과 함께 표시할 수 있습니다.','GROUP BY로 행을 묶어 줄이는 것과 다릅니다. 동점 처리와 ORDER BY 조건도 확인하세요.','개별 결과 행을 유지하면서 OVER로 지정한 구간에 순위나 집계를 적용하는 SQL 함수 분류는?',['윈도 함수','윈도우 함수','window function'],'sql-group','sql'],
+['candidate-key','db','후보키와 최소성','행을 구별하는 슈퍼키 중 속성을 더 빼면 식별성을 잃는 집합이 후보키입니다.','학생번호가 이미 유일하면 학생번호·이름의 묶음은 슈퍼키지만 최소가 아닙니다.','최소성은 속성 수가 전체에서 가장 작다는 뜻이 아니라 불필요한 속성이 없다는 뜻입니다.','유일성과 최소성을 만족하는 행 식별 속성 집합은?',['후보키','candidate key'],'pk','design'],
+['fd','db','함수 종속','X 값이 같은 두 행에서 Y 값도 항상 같으면 X→Y가 성립합니다.','부서번호가 부서명을 결정한다면 부서번호→부서명입니다.','한 표본에서 우연히 값이 유일한 것과 모든 허용 데이터에 적용되는 제약을 구별합니다.','한 속성 집합의 값이 다른 속성 집합의 값을 결정하는 제약은?',['함수 종속','함수적 종속','functional dependency'],'relational','design'],
+['normal-2nf','db','제2정규형과 부분 종속','1NF 관계에서 모든 비주요 속성이 각 후보키 전체에 완전 함수 종속되어야 합니다.','키가 (학생,과목)인데 학생→학생이름이면 키 일부에만 종속됩니다.','후보키에 속하는 주요 속성과 비주요 속성을 먼저 구분하세요.','1NF를 만족하고 비주요 속성의 후보키에 대한 부분 함수 종속이 없는 정규형은?',['2NF','제2정규형','2정규형'],'candidate-key,fd,normalization','design'],
+['normal-3nf','db','제3정규형과 이행 종속','1NF 관계의 비자명 X→A마다 X가 슈퍼키이거나 A가 주요 속성이어야 합니다.','키 AB→C, C→D이고 C·D가 비주요 속성이면 3NF를 위반합니다.','단순 암기보다 후보키와 각 종속의 결정자를 확인하세요. 주요 속성이 있는 예외도 있습니다.','각 비자명 함수 종속의 결정자가 슈퍼키이거나 종속 속성이 주요 속성인 정규형은?',['3NF','제3정규형','3정규형'],'normal-2nf','design'],
+['normal-bcnf','db','BCNF','자명하지 않은 모든 함수 종속에서 결정자가 슈퍼키여야 합니다.','A→B가 성립해도 A로 전체 행을 식별할 수 없으면 BCNF를 위반합니다.','3NF보다 강한 조건이며 분해 뒤 종속성 보존 여부는 따로 확인합니다.','모든 비자명 함수 종속의 결정자가 슈퍼키인 정규형의 약어는?',['BCNF','보이스 코드 정규형','Boyce Codd normal form'],'normal-3nf','design'],
+['er','db','E-R 모델과 카디널리티','개체·속성·관계로 업무 데이터를 표현하고 관계의 수와 참여 조건을 구분합니다.','학생과 강좌의 다대다 관계는 수강 연결 테이블로 표현할 수 있습니다.','최대 대응 수와 반드시 참여해야 하는지를 같은 조건으로 보지 마세요.','개체·속성·관계로 데이터 구조를 표현하는 모델의 약어는?',['ER','E-R','ER 모델'],'relational,fk','design'],
+['stack','code','스택','가장 나중에 넣은 항목이 먼저 나오는 LIFO 구조입니다.','후위식에서 오른쪽 피연산자를 먼저 꺼내고 왼쪽 피연산자를 다음에 꺼냅니다.','뺄셈·나눗셈은 꺼내는 순서를 바꾸면 결과가 달라집니다.','마지막에 넣은 항목을 먼저 꺼내는 자료구조는?',['스택','stack'],'arrays','os'],
+['queue','code','큐','먼저 들어온 항목을 먼저 꺼내는 FIFO 구조입니다.','BFS에서 방문할 정점을 큐에 넣어 가까운 층부터 탐색합니다.','우선순위 큐는 단순 도착 순서 큐와 선택 기준이 다릅니다.','먼저 들어온 항목을 먼저 꺼내는 기본 자료구조는?',['큐','queue'],'arrays','os'],
+['tree','code','트리와 순회','루트·부모·자식의 계층을 이루며 순회 규칙에 따라 노드를 방문합니다.','이진 트리의 중위 순회는 왼쪽 하위 트리→현재 노드→오른쪽 하위 트리입니다.','일반 이진 트리의 중위 결과가 항상 정렬되지는 않습니다. 이진 탐색 트리 조건이 필요합니다.','이진 트리에서 왼쪽·현재·오른쪽 순서로 방문하는 순회는?',['중위 순회','inorder','in-order'],'recursion','os'],
+['sort','code','정렬과 안정성','안정 정렬은 같은 정렬 키를 가진 항목의 기존 상대 순서를 유지합니다.','점수가 같은 두 학생의 원래 입력 순서를 보존하는지 확인합니다.','빠른 정렬이라는 사실만으로 안정성이나 모든 입력의 시간복잡도가 보장되지는 않습니다.','같은 키의 항목들이 기존 상대 순서를 유지하는 정렬의 성질은?',['안정성','stable','stability'],'arrays,loops','os'],
+['time-complexity','code','시간복잡도','입력 크기가 커질 때 필요한 연산 수가 어떤 속도로 증가하는지 봅니다.','정렬된 배열을 절반씩 줄여 찾는 이진 검색은 비교 횟수가 로그 규모입니다.','빅오 표기는 실제 실행 시간이나 항상 정확한 연산 횟수를 뜻하지 않습니다.','정렬된 배열을 절반씩 좁히는 이진 검색의 최악 비교 시간복잡도를 빅오로 쓰시오.',['O(log n)','O(logn)'],'loops,arrays','os'],
+['rr-scheduling','systems','라운드 로빈','준비된 작업에 시간 할당량을 번갈아 주는 선점 스케줄링입니다.','할당량이 2면 긴 작업은 2시간 단위 실행 뒤 준비 큐 뒤로 돌아갑니다.','도착 시점, 재삽입 순서, 문맥 전환 비용이 답에 영향을 주므로 조건을 확인합니다.','고정된 시간 할당량을 순환하여 제공하는 CPU 스케줄링의 약어는?',['RR','라운드 로빈','round robin'],'scheduling','os'],
+['unix-permission','systems','UNIX 파일 권한','소유자·그룹·기타 사용자마다 읽기 4, 쓰기 2, 실행 1의 비트를 합칩니다.','rwx는 7, r-x는 5, r--는 4이므로 rwxr-xr--는 754입니다.','디렉터리의 x는 탐색 권한입니다. 파일 삭제 가능 여부는 부모 디렉터리 권한 등도 봐야 합니다.','UNIX에서 파일의 모드 비트 권한을 바꾸는 명령 이름은?',['chmod'],'operators','unix'],
+['unix-command','systems','UNIX 기본 명령','현재 위치 확인·목록·파일 내용·프로세스 관찰을 목적에 맞게 구분합니다.','pwd는 현재 디렉터리, ps는 프로세스 목록, grep은 텍스트 패턴 검색에 사용합니다.','명령 이름과 옵션 효과를 구분하고 삭제·권한 변경은 대상 경로부터 확인합니다.','UNIX에서 현재 작업 디렉터리 경로를 출력하는 명령은?',['pwd'],'process','unix'],
+['arp','systems','ARP','로컬 IPv4 링크에서 다음 홉의 IP 주소에 대응하는 링크 계층 주소를 알아냅니다.','다른 네트워크로 보낼 때는 목적지 호스트가 아니라 보통 게이트웨이의 MAC 주소를 찾습니다.','도메인 이름을 IP로 찾는 DNS와 구분합니다. IPv6은 같은 ARP를 사용하지 않습니다.','IPv4 로컬 링크에서 IP에 대응하는 MAC 주소를 알아내는 프로토콜은?',['ARP'],'ip','arp'],
+['routing','systems','라우팅과 최장 프리픽스','목적지에 맞는 경로들 중 더 긴 네트워크 프리픽스가 우선합니다.','/24와 /16이 모두 맞으면 /24 경로를 고릅니다.','주소가 실제 프리픽스에 포함되는지 먼저 확인하고 같은 길이의 선택 규칙은 따로 봅니다.','라우팅에서 목적지와 일치하는 가장 긴 네트워크 프리픽스를 우선하는 규칙은?',['최장 프리픽스 매칭','longest prefix match','LPM'],'subnet','routing'],
+['uml-relations','dev','UML 관계와 합성','연관·의존·일반화와 전체·부분 관계를 구분합니다. 합성은 강한 전체·부분 소유 관계입니다.','전체 객체가 소멸할 때 아직 포함된 부분도 함께 소멸하는 관계는 합성입니다.','일반화의 빈 삼각형과 합성의 채운 마름모를 혼동하지 마세요.','UML에서 채운 마름모로 나타내는 강한 전체·부분 관계는?',['합성','합성 관계','composition','컴포지션'],'uml','uml'],
+['cohesion-types','dev','응집도 유형의 구별','모듈이 묶인 이유가 시간·절차·자료·하나의 기능 중 무엇인지 확인합니다.','이전 처리의 출력이 다음 처리의 입력이면 순차적 응집, 한 기능 수행이면 기능적 응집입니다.','같은 시각에 실행된다는 이유로 한 기능을 수행한다고 판단하지 마세요.','한 작업의 출력이 다음 작업의 입력이 되도록 구성된 모듈의 응집도 유형은?',['순차적 응집도','순차 응집도','sequential cohesion'],'cohesion','exam'],
+['coupling-types','dev','결합도 유형의 구별','자료 자체, 전체 자료구조, 제어 흐름 선택 정보 등을 전달하는 경우를 구분합니다.','호출자가 전달한 플래그로 피호출 모듈의 처리 경로를 선택하면 제어 결합입니다.','정수라고 무조건 자료 결합인 것은 아닙니다. 전달한 값의 역할을 봅니다.','다른 모듈의 내부 처리 경로를 고르는 제어 정보를 전달하는 결합도 유형은?',['제어 결합도','제어 결합','control coupling'],'coupling','exam'],
+['strategy','dev','Strategy 패턴','여러 알고리즘을 공통 인터페이스로 캡슐화하고 사용하는 쪽에서 교체합니다.','할인 계산 정책을 서로 다른 전략 객체로 바꾸어 적용할 수 있습니다.','상태 변화 알림인 Observer와 알고리즘 교체인 Strategy의 목적을 구분합니다.','알고리즘을 공통 인터페이스로 캡슐화하여 서로 교체하는 패턴은?',['Strategy','전략 패턴','전략'],'patterns','uml'],
+['csrf','dev','CSRF','인증된 브라우저의 자격정보가 악용되어 사용자가 원하지 않는 요청이 수행되는 공격입니다.','상태 변경 요청에서 서버가 검증하는 CSRF 토큰 등으로 의도한 요청인지 확인합니다.','XSS와 다르며 SameSite 같은 방어 하나를 모든 환경의 만능 해결책으로 보지 않습니다.','인증된 브라우저가 원하지 않는 상태 변경 요청을 보내도록 유도하는 공격의 약어는?',['CSRF','cross site request forgery'],'authentication,http','csrf'],
+['digital-signature','dev','전자서명과 검증','서명자의 개인키로 서명하고 대응하는 공개키로 서명을 검증합니다.','수신자는 메시지와 서명을 검증해 서명자와 무결성을 확인합니다.','서명은 기밀성 제공 자체와 다르며 개인키 보호와 인증서 신뢰도 필요합니다.','서명자의 개인키로 생성하고 공개키로 검증하는 메시지 무결성·서명자 확인 수단은?',['전자서명','디지털 서명','digital signature'],'encryption,hashing','security'],
+['py-set','code','Python 집합','중복 없는 해시 가능한 요소의 집합입니다. 순회 순서가 답을 결정하지 않도록 조건을 확인합니다.','{2,2,3}의 원소 수는 2이며 &로 교집합을 구할 수 있습니다.','집합을 그대로 출력한 요소 순서를 고정 정답으로 삼지 않습니다. 필요하면 sorted로 정렬합니다.','Python에서 중복 없는 요소 집합을 나타내는 내장 자료형은?',['set','집합'],'py-sequence','python'],
+['comprehension','code','Python 컴프리헨션','반복·조건·결과 식을 조합해 새 컬렉션을 만듭니다.','[x*x for x in xs if x%2==0]은 짝수만 고른 뒤 제곱합니다.','바깥 반복과 안쪽 반복의 순서, 조건을 적용하는 위치를 따로 봅니다.','Python에서 반복과 조건 식으로 리스트 등을 간결하게 만드는 표현 방식은?',['컴프리헨션','comprehension','리스트 컴프리헨션'],'loops,py-sequence','python'],
 ];
-export const concepts = Object.freeze(rows.map(([id,group,title,rule,example,pitfall,prompt,answers,prerequisites,reference]) => Object.freeze({
+export const concepts = Object.freeze([...rows,...caseConceptRows].map(([id,group,title,rule,example,pitfall,prompt,answers,prerequisites,reference]) => Object.freeze({
   id,group,title,rule,example,pitfall,prompt,answers:Object.freeze(answers), prerequisites:Object.freeze(prerequisites?prerequisites.split(','):[]), reference,
 })));
 export const getConcept = id => concepts.find(item=>item.id===id) ?? null;

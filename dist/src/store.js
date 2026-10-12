@@ -29,7 +29,10 @@ export function createStore(storage) {
   let state=emptyState(),available=true,error='';
   try{state=parseState(storage.getItem(KEY));}catch(e){available=false;error='기록을 읽지 못했습니다. 원본은 변경하지 않았습니다.';}
   function persist(next,replace=false){
-    validateState(next);const raw=JSON.stringify(next);if(raw.length>MAX_SIZE)throw new Error('저장할 기록이 너무 큽니다.');
+    validateState(next);let raw=JSON.stringify(next);
+    while(raw.length>MAX_SIZE&&next.attempts.length){next.attempts.shift();raw=JSON.stringify(next);}
+    while(raw.length>MAX_SIZE&&next.sessions.length){next.sessions.shift();raw=JSON.stringify(next);}
+    if(raw.length>MAX_SIZE)throw new Error('저장할 기록이 너무 큽니다.');
     state=next;
     if(!available&&!replace){error='이번 기록은 화면에만 유지됩니다. 저장을 복구하려면 백업 복원 또는 기록 삭제를 사용하세요.';return false;}
     try{storage.setItem(KEY,raw);if(storage.getItem(KEY)!==raw)throw new Error('write verification');available=true;error='';return true;}
@@ -43,7 +46,7 @@ export function createStore(storage) {
     bookmark(code){if(!getQuestion(code))throw new TypeError('Invalid code');return mutate(s=>{s.bookmarks=s.bookmarks.includes(code)?s.bookmarks.filter(c=>c!==code):[...s.bookmarks,code].slice(-128);});},
     settings(values){return mutate(s=>{s.settings={...s.settings,...values};});},
     active(session){return mutate(s=>{s.active=session;});},
-    finish(summary,attempts){return mutate(s=>{if(s.sessions.some(item=>item.id===summary.id)){s.active=null;return;}s.sessions=[...s.sessions,summary].slice(-20);s.attempts=[...s.attempts,...attempts].slice(-MAX_ATTEMPTS);s.active=null;});},
+    finish(summary,attempts){return mutate(s=>{if(s.sessions.some(item=>item.id===summary.id)||(s.active&&s.active.id!==summary.id))return;s.sessions=[...s.sessions,summary].slice(-20);s.attempts=[...s.attempts,...attempts].slice(-MAX_ATTEMPTS);s.active=null;});},
     export(){return JSON.stringify(state,null,2);},
     restore(raw){const next=parseState(raw);return persist(structuredClone(next),true);},
     clear(){try{storage.removeItem(KEY);if(storage.getItem(KEY)!==null)throw new Error('delete verification');state=emptyState();available=true;error='';return true;}catch{error='기록을 삭제하지 못했습니다. 브라우저 저장 설정을 확인하세요.';return false;}},

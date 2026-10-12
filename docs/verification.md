@@ -1,5 +1,20 @@
 # Verification — 2026-10-12
 
+## Re-audit — 2026 exam profile
+
+- LOCAL_NODE: PASS 31 tests, 583 canonical answer/wrong/empty checks within content tests, original rubric/state regression checks, all twelve direct applied paths, SQL token/literal cases and independent new scheduling/coverage references. Static checker PASS. This is not 583 independent reasoning skills.
+- LOCAL_NATIVE: PASS C 72 / Java 56 / Python 56 / SQLite 95 = 279 executed variants. GCC 15.1.0, javac 25.0.4.1 with release 17, Python 3.11.9. Native artifact directory is outside public dist.
+- LOCAL_DIALECTS: PASS PostgreSQL 18.4 DCL 5 / MySQL 8.4.11 procedures 5 / functions 5 = 15. Author-completed statements, permission effects and calls/returns checked. Containers had no network/ports/host binds, limited resources and an unprivileged fixture role; owned containers removed. Only test image caches may remain. Initial temporary-server ping race failed, then readiness fixed to wait for final PID-1 server and all cases rerun PASS. No Neon or runtime DB.
+- BROWSER_LOCAL: actual selects/types/submits PASS all 70 applied families (one condition per family) and direct links from all 12 headings. Extra formatted/lowercase SQL accepted while literal/value changes rejected by tests. Search result/article/empty/prerequisite, cancelled typed-draft switch, 15-minute plan, diagnostic answer/flag/reload/score, confirmed/cancelled abandon checked. All 583 canonical answers are unit-graded; not all 583 variants are individually UI-played.
+- REGRESSION_RED_GREEN: serialized size despite valid count, duplicate stale completion and mastery-streak reset first failed then passed unit tests. Family-only cycling/search mismatch/retained answer print sheet/decorative plan first reproduced before fixing. Controlled delayed interval + clock past deadline rejects late input and submits the earlier draft. Synthetic beforeprint event forces current active question sheet; not a real 150-minute exam or physical printer run.
+- PRESERVATION: all original 304 IDs/answers/kinds compared with prior HEAD and unchanged. State key/schema unchanged; original bounded storage tests retain restore/error/other-key protections. The actual initial-delivery synthetic v1 backup (28 attempts, one bookmark, one completed session) restored through UI; re-download retained attempts/bookmarks/settings exactly. Additive content is not a migration of private user records.
+- VISUAL_LOCAL: reviewed current scope, SQL written answer and six-line input at desktop 1440×1000 and touch-emulated minimum 320×844. 390px flow and reduced-motion context also checked. Selected layouts have document width equal viewport, mobile answer text 16px, no observed page errors. Chrome-only evidence, not physical iOS/IME, screen-reader or all-browser certification. A fresh touch context confirmed the final textarea rendering; no claim about an earlier transient headless paint artifact's cause.
+- PRINT_LOCAL: new complete diagnostic used canonical reference answers through UI, reload retained final draft, 20 correct/0 unanswered produced 100/100 with twenty item reviews. Question/answer PDFs generated through UI; no expected answer nodes in question paper, twenty in answer paper. Pages 1–2 of each rendered and inspected; not every page individually visually inspected. Reference-answer QA is not evidence of a human's pass readiness or official partial credit.
+- SOURCE_BOUNDARY: all twelve headings have representative applied work; longer/different structures remain. See audit-20261012.md/content-sources.md. Private inputs and SENSE LAB are untouched. Current WEB LAB change is only this entry/actual JPEG.
+- REMOTE_CI / LIVE for this re-audit: NOT_RUN at this pre-publication checkpoint. Historical initial-release evidence below is not evidence for this update.
+
+## Initial delivery — historical evidence
+
 ## Local
 
 - Native language/SQL execution: PASS 176 variants (C 48, Java 40, Python 40, SQLite 48), GCC 15.1.0, Java 25 compiling for release 17, Python 3.11.9. Educational traces are separate authored explanations.

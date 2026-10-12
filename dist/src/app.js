@@ -1,19 +1,20 @@
 import { concepts, getConcept, groups, contentProfile } from './curriculum.js';
-import { allFamilies, itemFamilies, questionCodes, getQuestion, selectCodes } from './questions.js';
-import { grade, shuffled, sessionCodes, scoreSession, conceptStatus, reviewConcepts, domainSummary, remainingSeconds, nextVariant, DAY } from './engine.js';
+import { allFamilies, itemFamilies, questionCodes, getQuestion, selectCodes, familyChoices, nextFamilyCode } from './questions.js';
+import { grade, shuffled, sessionCodes, scoreSession, conceptStatus, reviewConcepts, domainSummary, remainingSeconds, canEditSession, dailyPlan, nextVariant, DAY } from './engine.js';
 import { createStore, KEY, MAX_SIZE } from './store.js';
+import { coverageTopics, contentInventory, topicInventory } from './coverage.js';
 import { el, button, questionBody, traceView, relatedConcepts, referenceLink, metric, emptyMessage } from './view.js';
 const $=id=>document.getElementById(id), content=$('content');
 const store=createStore({getItem:key=>window.localStorage.getItem(key),setItem:(key,value)=>window.localStorage.setItem(key,value),removeItem:key=>window.localStorage.removeItem(key)});
-const names={home:'오늘 학습',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',settings:'학습 기록 · 설정'};
+const names={home:'오늘 학습',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',scope:'학습 범위',settings:'학습 기록 · 설정'};
 let route='home',selectedConcept='pointers',conceptQuery='',conceptGroup='all';
 let filters={group:'all',language:'all',difficulty:'all',concept:null},practiceCode='C01.0',practice=null,finishedSession=null,timer=0;
 const entropy=()=>crypto.getRandomValues(new Uint32Array(1))[0];
 function notice(message=store.error){$('storage-notice').textContent=message;$('storage-notice').hidden=!message;}
 function saveNotice(saved){notice(saved?'':store.error);}
 function heading(title,description='',actions=null){return el('div',{class:'page-heading'},el('div',{},el('p',{class:'eyebrow'},'INFORMATION PROCESSING / PRACTICAL'),el('h1',{},title),description?el('p',{class:'muted small'},description):null),actions);}
-function go(next){if(!Object.hasOwn(names,next))next='home';if(store.state.active&&['concepts','practice','review'].includes(next))next='exam';route=next;history.replaceState(null,'','#'+next);render();content.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function openConcept(id){if(!getConcept(id))return;selectedConcept=id;go('concepts');}
+function go(next){if(!Object.hasOwn(names,next))next='home';if(store.state.active&&['concepts','practice','review','scope'].includes(next))next='exam';route=next;history.replaceState(null,'','#'+next);render();content.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+function openConcept(id){if(!getConcept(id))return;selectedConcept=id;conceptQuery='';conceptGroup='all';go('concepts');}
 function openQuestion(code){if(!getQuestion(code))return;practiceCode=code;practice=null;filters={group:'all',language:'all',difficulty:'all',concept:null};go('practice');}
 function formatDate(at){return new Date(at).toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 function chip(group){const info=groups.find(g=>g.id===group);return el('span',{class:'group-chip '+info.color},info.name);}
@@ -21,18 +22,18 @@ function chooseSelect(id,label,values,value,onChange){return el('div',{class:'fi
 function preferredPractice(conceptId=null){const codes=conceptId?selectCodes({concept:conceptId}):questionCodes;const seen=new Set(store.state.attempts.map(a=>a.code));return shuffled(codes,entropy()).find(code=>!seen.has(code))??codes[0];}
 function renderHome(){
   const attempts=store.state.attempts,due=reviewConcepts(attempts),summary=domainSummary(attempts),touched=concepts.filter(c=>conceptStatus(c.id,attempts).total).length,correct=attempts.filter(a=>a.correct&&!a.hinted).length;
-  const next=due[0]??getConcept('pointers'),minutes=store.state.settings.minutes;
+  const next=due[0]??getConcept('pointers'),minutes=store.state.settings.minutes,plan=dailyPlan(minutes);
   content.append(heading('오늘 학습','개념을 이해하고, 답을 직접 쓰고, 틀린 과정을 다시 확인하세요.'));
   if(store.state.settings.examDate)content.append(el('p',{class:'small muted'},'시험 예정일 · '+store.state.settings.examDate));
-  if(store.state.active)content.append(el('div',{class:'resume-bar'},el('div',{},el('strong',{},'진행 중인 '+(store.state.active.mode==='mock'?'모의시험':'진단평가')),el('p',{class:'small muted'},'작성한 답안을 이어서 풀 수 있습니다. 모의시험 시간은 계속 흐릅니다.')),button('이어서 풀기',()=>go('exam'))));
-  content.append(el('div',{class:'metrics'},metric('풀이 기록',attempts.length,'힌트·오답도 기록합니다'),metric('힌트 없이 정답',correct),metric('학습한 개념',`${touched} / ${concepts.length}`),metric('복습할 개념',due.length)));
+  if(store.state.active){content.append(el('div',{class:'resume-bar'},el('div',{},el('strong',{},'진행 중인 '+(store.state.active.mode==='mock'?'모의시험':'진단평가')),el('p',{class:'small muted'},'작성한 답안을 이어서 풀 수 있습니다. 모의시험 시간은 계속 흐릅니다.')),button('이어서 풀기',()=>go('exam'))));return;}
+  content.append(el('div',{class:'metrics'},metric('풀이 기록',attempts.length,'힌트·오답도 기록합니다'),metric('힌트 없이 정답',correct),metric('풀어본 개념',`${touched} / ${concepts.length}`),metric('복습할 개념',due.length)));
   content.append(el('div',{class:'two-columns'},el('section',{class:'daily-plan'},el('p',{class:'eyebrow'},`TODAY / ${minutes} MIN`),el('h2',{},next.title),el('p',{class:'muted'},next.rule),el('div',{class:'row'},button('추천 문제 풀기',()=>openQuestion(preferredPractice(next.id))),button('개념부터 보기',()=>openConcept(next.id),'button subtle')),el('div',{class:'plan-steps'},
-    el('div',{class:'plan-step'},el('small',{},'01 / RETRIEVE'),el('strong',{},'복습'),el('p',{},due.length?`${due.length}개 개념이 다시 풀 시점입니다.`:'아직 복습 기록이 없습니다.')),
-    el('div',{class:'plan-step'},el('small',{},'02 / UNDERSTAND'),el('strong',{},'개념'),el('p',{},'규칙·예시·혼동하는 지점을 확인합니다.')),
-    el('div',{class:'plan-step'},el('small',{},'03 / APPLY'),el('strong',{},'새 조건'),el('p',{},'다른 문제에서도 도움 없이 답을 써봅니다.')))),
+    el('div',{class:'plan-step'},el('small',{},'01 / RETRIEVE'),el('strong',{},`복습 ${plan.review}분`),el('p',{},due.length?`${due.length}개 개념이 다시 풀 시점입니다.`:'이전에 읽은 내용을 먼저 떠올립니다.')),
+    el('div',{class:'plan-step'},el('small',{},'02 / UNDERSTAND'),el('strong',{},`개념 ${plan.concept}분`),el('p',{},'규칙·예시·혼동하는 지점을 확인합니다.')),
+    el('div',{class:'plan-step'},el('small',{},'03 / APPLY'),el('strong',{},`새 조건 ${plan.practice}분`),el('p',{},'다른 문제에서도 도움 없이 답을 써봅니다.')))),
     el('section',{class:'panel'},el('h3',{},'영역별 풀이'),el('div',{class:'domain-list'},summary.map(g=>el('div',{class:'domain-row'},el('div',{class:'row spread'},el('strong',{},g.name),el('small',{},`${g.unhinted} / ${g.total} 힌트 없이 정답`)),el('meter',{min:0,max:Math.max(1,g.total),value:g.unhinted,'aria-label':g.name+' 정답 기록'})))))));
   content.append(el('section',{class:'panel section-gap'},el('div',{class:'row spread'},el('div',{},el('h3',{},'어디서 시작할지 모르겠다면'),el('p',{class:'muted small'},'프로그래밍·DB·시스템·개발 이론의 20문항으로 학습 출발점을 확인합니다.')),button('진단평가 시작',()=>startSession('diagnostic'),'button subtle'))));
-  content.append(el('p',{class:'settings-note'},`${concepts.length}개 개념 · 코드 ${itemFamilies.filter(f=>['c','java','python'].includes(f.language)).length}유형 · SQL ${itemFamilies.filter(f=>f.language==='sql').length}유형 · 계산 ${itemFamilies.filter(f=>f.language==='calculation').length}유형 · 개념 단답 ${concepts.length}개. 총 ${questionCodes.length}문항은 고정 조건 변형을 포함합니다.`));
+  const inventory=contentInventory();content.append(el('p',{class:'settings-note'},`${inventory.concepts}개 개념 · 코드 ${inventory.codeFamilies}·SQL ${inventory.sqlFamilies}·계산 ${inventory.calculationFamilies}·사례 ${inventory.scenarioFamilies}유형 · 단답 ${inventory.termItems}개. 총 ${inventory.items}문항은 고정 조건 변형을 포함합니다. 시간 배분은 권장 계획이며 강제 제한이 아닙니다.`),el('div',{class:'scope-warning'},el('p',{},'2026 출제기준의 12개 영역을 개념과 응용 문제로 연습합니다. 전체 기출이나 공식 채점 기준을 재현한 자료는 아닙니다.'),button('학습 범위별 문제 보기',()=>go('scope'),'link-button')));
 }
 function renderConcepts(){
   content.append(heading('개념 학습','선수 개념 → 핵심 규칙 → 예시 → 문제 풀이로 연결됩니다.'));
@@ -40,27 +41,31 @@ function renderConcepts(){
   const search=el('input',{id:'concept-search',type:'search',placeholder:'개념 찾기',value:conceptQuery,maxlength:80,onInput:event=>{conceptQuery=event.target.value;updateList();}});
   content.append(el('div',{class:'filters'},chooseSelect('concept-group','영역',[['all','모든 영역'],...groups.map(g=>[g.id,g.name])],conceptGroup,value=>{conceptGroup=value;updateList();}),el('div',{class:'field'},el('label',{for:'concept-search'},'검색'),search)));
   content.append(el('div',{class:'concept-layout'},list,article));
-  function updateList(){const entries=concepts.filter(c=>(conceptGroup==='all'||c.group===conceptGroup)&&[c.title,c.rule,c.id].join(' ').toLowerCase().includes(conceptQuery.toLowerCase()));list.replaceChildren(...entries.map(c=>button([el('span',{},c.title),el('small',{},conceptStatus(c.id,store.state.attempts).label)],()=>{selectedConcept=c.id;updateList();updateArticle();},c.id===selectedConcept?'selected':'')));if(!entries.length)list.append(el('p',{class:'muted small'},'조건에 맞는 개념이 없습니다.'));}
-  function updateArticle(){const c=getConcept(selectedConcept),status=conceptStatus(c.id,store.state.attempts);article.replaceChildren(el('div',{class:'row spread'},chip(c.group),el('span',{class:'status-chip'},status.label)),el('h2',{class:'section-gap'},c.title),el('p',{class:'concept-rule'},c.rule),el('div',{class:'example-block'},el('h3',{},'작은 예시'),el('p',{},c.example)),el('h3',{},'구별할 지점'),el('p',{},c.pitfall));if(c.prerequisites.length)article.append(el('h3',{class:'section-gap'},'먼저 익힐 개념'),relatedConcepts(c.prerequisites,id=>{selectedConcept=id;updateList();updateArticle();}));article.append(el('div',{class:'row section-gap'},button('이 개념 문제 풀기',()=>{filters={group:'all',language:'all',difficulty:'all',concept:c.id};practiceCode=preferredPractice(c.id);practice=null;go('practice');})),referenceLink(c.reference));}
+  function updateList(){const entries=concepts.filter(c=>(conceptGroup==='all'||c.group===conceptGroup)&&[c.title,c.rule,c.id].join(' ').toLowerCase().includes(conceptQuery.toLowerCase()));article.hidden=!entries.length;if(entries.length&&!entries.some(c=>c.id===selectedConcept))selectedConcept=entries[0].id;list.replaceChildren(...entries.map(c=>button([el('span',{},c.title),el('small',{},conceptStatus(c.id,store.state.attempts).label)],()=>{selectedConcept=c.id;updateList();},c.id===selectedConcept?'selected':'')));if(!entries.length)list.append(el('p',{class:'muted small'},'조건에 맞는 개념이 없습니다.'));if(entries.length)updateArticle();}
+  function updateArticle(){const c=getConcept(selectedConcept),status=conceptStatus(c.id,store.state.attempts);article.replaceChildren(el('div',{class:'row spread'},chip(c.group),el('span',{class:'status-chip'},status.label)),el('h2',{class:'section-gap'},c.title),el('p',{class:'concept-rule'},c.rule),el('div',{class:'example-block'},el('h3',{},'작은 예시'),el('p',{},c.example)),el('h3',{},'구별할 지점'),el('p',{},c.pitfall));if(c.prerequisites.length)article.append(el('h3',{class:'section-gap'},'먼저 익힐 개념'),relatedConcepts(c.prerequisites,id=>{selectedConcept=id;conceptQuery='';conceptGroup='all';search.value='';$('concept-group').value='all';updateList();}));article.append(el('div',{class:'row section-gap'},button('이 개념 문제 풀기',()=>{filters={group:'all',language:'all',difficulty:'all',concept:c.id};practiceCode=preferredPractice(c.id);practice=null;go('practice');})),referenceLink(c.reference));}
   updateList();updateArticle();
 }
 function renderPractice(){
   content.append(heading('문제 풀이','답안을 먼저 작성한 뒤 정답과 실행 과정을 확인합니다.'));
-  const values=[['all','모든 유형'],['c','C'],['java','Java'],['python','Python'],['sql','SQL'],['calculation','계산'],['term','개념 단답']];
-  const change=(key,value)=>{filters[key]=value;filters.concept=null;practice=null;render();};
+  const values=[['all','모든 형식'],['c','C'],['java','Java'],['python','Python'],['sql','SQL'],['calculation','계산'],['scenario','사례 적용'],['term','개념 단답']];
+  const leaveDraft=()=>!practice||practice.graded||!practice.answer.trim()||window.confirm('작성 중인 답안을 버리고 문제를 바꿀까요?');
+  const change=(key,value)=>{if(!leaveDraft()){render();return;}filters[key]=value;filters.concept=null;practice=null;render();};
   const codes=selectCodes(filters);
-  content.append(el('div',{class:'filters'},chooseSelect('practice-group','영역',[['all','모든 영역'],...groups.map(g=>[g.id,g.name])],filters.group,value=>change('group',value)),chooseSelect('practice-language','문제 유형',values,filters.language,value=>change('language',value)),chooseSelect('practice-difficulty','난이도',[['all','전체'],['2','실전'],['3','응용']],filters.difficulty,value=>change('difficulty',value)),el('span',{class:'catalog-summary'},`${codes.length}개 문항${filters.concept?' · '+getConcept(filters.concept).title:''}`)));
+  content.append(el('div',{class:'filters'},chooseSelect('practice-group','영역',[['all','모든 영역'],...groups.map(g=>[g.id,g.name])],filters.group,value=>change('group',value)),chooseSelect('practice-language','언어 · 형식',values,filters.language,value=>change('language',value)),chooseSelect('practice-difficulty','난이도',[['all','전체'],['1','기초'],['2','표준'],['3','응용']],filters.difficulty,value=>change('difficulty',value)),el('span',{class:'catalog-summary'},`${familyChoices(codes).length}유형 · ${codes.length}문항 (조건 변형 포함)${filters.concept?' · '+getConcept(filters.concept).title:''}`)));
   if(!codes.length){content.append(emptyMessage('문제가 없습니다','영역과 문제 유형의 조합을 바꿔주세요.',button('필터 초기화',()=>{filters={group:'all',language:'all',difficulty:'all',concept:null};render();},'button subtle')));return;}
   if(!codes.includes(practiceCode))practiceCode=codes[0];
   const q=getQuestion(practiceCode);
+  const choices=familyChoices(codes),currentChoice=choices.find(item=>item.id===q.family);
+  const switchQuestion=code=>{if(code===practiceCode)return;if(!leaveDraft()){render();return;}practiceCode=code;practice=null;render();};
+  content.append(el('div',{class:'question-picker'},chooseSelect('practice-family','풀이 유형',choices.map(item=>[item.id,item.title]),q.family,value=>switchQuestion(choices.find(item=>item.id===value).codes[0])),chooseSelect('practice-variant','조건 선택',currentChoice.codes.map(code=>[code,`조건 ${getQuestion(code).variant+1} / ${currentChoice.codes.length}`]),q.code,switchQuestion),button('다른 유형',()=>switchQuestion(nextFamilyCode(q.code,codes)),'button subtle',{disabled:choices.length<2})));
   if(!practice||practice.code!==q.code)practice={code:q.code,answer:'',hinted:false,confidence:'unsure',started:performance.now(),graded:false,composing:false,attemptId:null};
   const ctx=practice,card=el('section',{class:'panel question-card'}),answerPanel=el('aside',{class:'panel answer-panel'});
-  card.append(el('div',{class:'question-meta'},el('div',{class:'row'},chip(q.group),el('span',{},q.difficulty===3?'응용':'실전')),el('span',{class:'mono'},q.code+' · 자체 제작')),questionBody(q));
+  card.append(el('div',{class:'question-meta'},el('div',{class:'row'},chip(q.group),el('span',{}, {1:'기초',2:'표준',3:'응용'}[q.difficulty])),el('span',{class:'mono'},q.code+' · 자체 제작')),questionBody(q));
   const bookmark=button(store.state.bookmarks.includes(q.code)?'표시 해제':'문제 표시',()=>{saveNotice(store.bookmark(q.code));bookmark.textContent=store.state.bookmarks.includes(q.code)?'표시 해제':'문제 표시';},'link-button');
   card.append(el('div',{class:'row spread'},relatedConcepts(q.conceptIds,openConcept),bookmark));
-  const form=el('form',{}),input=el('textarea',{id:'practice-answer',rows:q.kind==='table'?5:3,maxlength:1200,value:ctx.answer,disabled:ctx.graded,'aria-describedby':'answer-help',spellcheck:'false'});
+  const form=el('form',{}),input=el('textarea',{id:'practice-answer',rows:q.kind==='tokens'?6:q.kind==='table'?5:3,maxlength:1200,value:ctx.answer,disabled:ctx.graded,'aria-describedby':'answer-help',spellcheck:'false'});
   input.addEventListener('input',()=>{ctx.answer=input.value;});input.addEventListener('compositionstart',()=>{ctx.composing=true;});input.addEventListener('compositionend',()=>{ctx.composing=false;ctx.answer=input.value;});
-  const help={term:'허용 표기 목록으로 확인합니다. 영문 대소문자·공백 차이는 허용합니다.',number:'문제에서 요구한 단위의 정수를 입력하세요.',table:'각 행은 줄바꿈, 각 열은 |로 구분하세요. 예: 1|2|3',output:'출력의 대소문자와 내부 공백을 그대로 입력하세요.'}[q.kind];
+  const help={term:'허용 표기 목록으로 확인합니다. 영문 대소문자·공백 차이는 허용합니다.',number:'문제에서 요구한 단위의 정수를 입력하세요.',table:'각 행은 줄바꿈, 각 열은 |로 구분하세요. 예: 1|2|3',tokens:'문제에서 지정한 문장 형태를 사용하세요. 키워드 대소문자·줄바꿈·공백은 허용하지만 문자열 안의 값은 그대로 구분합니다.',output:'출력의 대소문자와 내부 공백을 그대로 입력하세요.'}[q.kind];
   const confidence=chooseSelect('practice-confidence','답에 대한 확신',[['guess','추측했어요'],['unsure','조금 헷갈려요'],['sure','확신해요']],ctx.confidence,value=>{ctx.confidence=value;});
   const submit=el('button',{type:'submit',class:'button answer-submit',disabled:ctx.graded},'정답 확인');
   const feedback=el('div',{}),hintBox=el('div',{class:'hint-box',hidden:!ctx.hinted},q.hint),hintButton=button('힌트 보기',()=>{if(ctx.graded)return;ctx.hinted=true;hintBox.hidden=false;hintButton.disabled=true;},'link-button hint-button',{disabled:ctx.graded||ctx.hinted});
@@ -85,11 +90,19 @@ function renderReview(){
   if(store.state.bookmarks.length)content.append(el('h2',{class:'section-gap'},'표시한 문제'),el('div',{class:'review-list'},store.state.bookmarks.map(code=>el('div',{class:'review-item'},el('span',{},getQuestion(code).title+' · '+code),button('문제 열기',()=>openQuestion(code),'button subtle')))));
   content.append(el('p',{class:'settings-note'},'한 번 정답이면 연습 중, 하루 이상 지난 재시도는 지연 복습 확인으로 표시합니다. 다른 조건의 문제도 도움 없이 해결해야 새 문제 확인 상태가 됩니다. 반복한 단답만으로 응용 이해를 확정하지 않습니다.'));
 }
+function renderScope(){
+  const inventory=contentInventory();content.append(heading('학습 범위','2026 실기 출제기준의 12개 영역별 개념과 응용 문제입니다.'));
+  content.append(el('div',{class:'scope-warning'},el('strong',{},'이 앱을 다 푸는 것만으로 합격 준비가 끝나지는 않습니다.'),el('p',{},'큰 영역 12개에 관련 내용이 있지만 세부 항목 전체를 연습하지는 않습니다. 앱 점수는 자체 문항의 채점 결과이며 공식 합격 가능성을 뜻하지 않습니다.')));
+  content.append(el('div',{class:'metrics'},metric('개념 단답',inventory.termItems),metric('코드 · SQL 유형',inventory.codeFamilies+inventory.sqlFamilies),metric('계산 · 사례 유형',inventory.calculationFamilies+inventory.scenarioFamilies),metric('전체 문항',inventory.items,'조건 변형 포함')));
+  content.append(el('p',{class:'scope-summary'},`개념 ${inventory.concepts}개, 응용 풀이 ${inventory.reasoningFamilies}유형입니다. 같은 유형의 숫자 변형과 같은 답의 반복은 서로 다른 풀이 능력 ${inventory.items}개를 검증하는 것이 아닙니다. 아래 항목의 개념·문항은 서로 겹칠 수 있습니다.`));
+  content.append(el('div',{class:'scope-grid'},coverageTopics.map((topic,i)=>{const n=topicInventory(topic);return el('article',{class:'panel'},el('div',{class:'row spread'},el('span',{class:'eyebrow'},String(i+1).padStart(2,'0')),el('span',{class:'status-chip'},topic.status)),el('h2',{},topic.name),el('p',{class:'small muted'},`연결 개념 ${n.concepts}개 · 응용 ${n.families}유형`),el('h3',{},'지금 연습할 내용'),el('p',{class:'small'},topic.provided),el('div',{class:'concept-links'},topic.practiceFamilies.map(id=>button(getQuestion(id+'.0').title,()=>openQuestion(id+'.0'),'button subtle'))),el('details',{class:'section-gap'},el('summary',{},'연결 개념 모두 보기'),relatedConcepts(topic.concepts,openConcept)),el('div',{class:'coverage-gap'},el('h3',{},'확장해서 연습할 조건'),el('p',{},topic.gap)),el('p',{class:'small'},topic.next));})));
+  content.append(el('section',{class:'panel section-gap'},el('h2',{},'시험 준비에 활용하는 방법'),el('ol',{},el('li',{},'개념을 익힌 뒤 이 앱의 문제를 답안과 근거까지 직접 작성합니다.'),el('li',{},'연결된 개념을 하루 이상 지난 뒤 힌트 없이 다시 풀어봅니다.'),el('li',{},'위의 확장 조건은 2026 기준에 맞는 교재와 공개 자료의 다른 문제로 추가 연습합니다.'),el('li',{},'앱에서 보지 않은 구조의 문제를 제한 시간 안에 풀고 오답 원인을 확인합니다.')),referenceLink('exam')));
+}
 function startSession(mode){
   if(store.state.active){go('exam');return;}
   if(mode==='mock'&&!window.confirm('20문항 모의시험을 시작할까요? 제한 시간은 150분이며, 다른 화면으로 이동해도 시간이 계속 흐릅니다.'))return;
   const now=Date.now(),session={id:crypto.randomUUID(),mode,startedAt:new Date(now).toISOString(),deadline:mode==='mock'?now+9000000:null,codes:sessionCodes(mode,entropy()),answers:Array(20).fill(''),flagged:[],index:0};
-  finishedSession=null;saveNotice(store.active(session));go('exam');tick();
+  finishedSession=null;$('print-area').replaceChildren();saveNotice(store.active(session));go('exam');tick();
 }
 function finishSession(automatic=false){
   const current=store.state.active;if(!current)return;
@@ -114,12 +127,13 @@ function renderActive(session){
   content.append(heading(session.mode==='mock'?'모의시험 진행 중':'진단평가 진행 중',`문항 ${session.index+1} / 20 · 답안 작성 ${answered} / 20`));
   const card=el('section',{class:'panel question-card'},el('div',{class:'question-meta'},chip(q.group),el('span',{class:'mono'},`문항 ${session.index+1} · ${q.code}`)),questionBody(q)),aside=el('aside',{class:'panel answer-panel'});
   const input=el('textarea',{id:'exam-answer',rows:5,maxlength:1200,value:session.answers[session.index],spellcheck:'false'}),saved=el('p',{class:'answer-help'},'답안은 입력할 때 자동 저장됩니다. 제출 전에는 채점하지 않습니다.');
-  input.addEventListener('input',()=>{const current=store.state.active;if(!current||current.id!==session.id)return;const next=structuredClone(current);next.answers[session.index]=input.value;const ok=store.active(next);saved.textContent=ok?'답안 저장됨':'화면에만 유지 · 저장 상태를 확인하세요.';saveNotice(ok);updateMap();});
+  const editable=()=>{const current=store.state.active;if(!current||current.id!==session.id)return false;if(!canEditSession(current)){finishSession(true);return false;}return true;};
+  input.addEventListener('input',()=>{if(!editable())return;const current=store.state.active;const next=structuredClone(current);next.answers[session.index]=input.value;const ok=store.active(next);saved.textContent=ok?'답안 저장됨':'화면에만 유지 · 저장 상태를 확인하세요.';saveNotice(ok);updateMap();});
   const map=el('div',{class:'exam-map'}),flag=el('input',{id:'exam-flag',type:'checkbox',checked:session.flagged.includes(session.index)});
-  flag.addEventListener('change',()=>{const next=structuredClone(store.state.active);next.flagged=flag.checked?[...new Set([...next.flagged,session.index])]:next.flagged.filter(n=>n!==session.index);saveNotice(store.active(next));updateMap();});
-  function move(index){const current=store.state.active;if(!current)return;saveNotice(store.active({...structuredClone(current),index}));render();$('exam-answer')?.focus({preventScroll:true});}
+  flag.addEventListener('change',()=>{if(!editable())return;const next=structuredClone(store.state.active);next.flagged=flag.checked?[...new Set([...next.flagged,session.index])]:next.flagged.filter(n=>n!==session.index);saveNotice(store.active(next));updateMap();});
+  function move(index){if(!editable())return;const current=store.state.active;saveNotice(store.active({...structuredClone(current),index}));render();$('exam-answer')?.focus({preventScroll:true});}
   function updateMap(){const current=store.state.active;if(!current)return;map.replaceChildren(...current.codes.map((code,i)=>button(String(i+1).padStart(2,'0'),()=>move(i),(current.answers[i].trim()?'answered ':'')+(current.flagged.includes(i)?'flagged ':'')+(i===current.index?'current':''),{'aria-label':`${i+1}번 문제${current.answers[i].trim()?', 답안 있음':''}${current.flagged.includes(i)?', 다시 볼 문제':''}`})));}
-  aside.append(el('label',{for:'exam-answer'},'답안 작성'),input,saved,el('label',{class:'flag-control',for:'exam-flag'},flag,'나중에 다시 보기'),el('h3',{class:'section-gap'},'문항 이동'),map,el('div',{class:'row'},button('← 이전',()=>move(session.index-1),'button subtle',{disabled:session.index===0}),button('다음 →',()=>move(session.index+1),'button subtle',{disabled:session.index===19})),el('div',{class:'exam-controls'},button('시험 제출',()=>finishSession()),button('문제지 인쇄',()=>printQuestions(session.codes,false),'link-button')),el('p',{class:'small muted section-gap'},'파란 칸: 답안 있음 · 밑줄: 다시 볼 문제. 정답·힌트는 제출 후 확인합니다.'));
+  aside.append(el('label',{for:'exam-answer'},'답안 작성'),input,saved,el('label',{class:'flag-control',for:'exam-flag'},flag,'나중에 다시 보기'),el('h3',{class:'section-gap'},'문항 이동'),map,el('div',{class:'row'},button('← 이전',()=>move(session.index-1),'button subtle',{disabled:session.index===0}),button('다음 →',()=>move(session.index+1),'button subtle',{disabled:session.index===19})),el('div',{class:'exam-controls'},button('시험 제출',()=>finishSession()),button('문제지 인쇄',()=>printQuestions(session.codes,false),'link-button'),button('시험 중단',()=>{if(!editable()||!window.confirm('시험을 중단하고 작성한 답안을 버릴까요? 완료 기록은 남기지 않습니다.'))return;saveNotice(store.active(null));finishedSession=null;render();},'link-button')),el('p',{class:'small muted section-gap'},'파란 칸: 답안 있음 · 밑줄: 다시 볼 문제. 정답·힌트는 제출 후 확인합니다.'));
   content.append(el('div',{class:'question-layout'},card,aside));updateMap();
 }
 function renderResult(session){
@@ -140,22 +154,24 @@ function renderSettings(){
   const file=el('input',{id:'backup-file',type:'file',accept:'.json,application/json',class:'file-input'}),backup=el('section',{class:'panel'},el('h2',{},'기록 백업'),el('p',{},`최근 ${store.state.attempts.length}개 풀이, ${store.state.bookmarks.length}개 표시 문제, ${store.state.sessions.length}개 시험 기록.`),button('백업 내려받기',()=>downloadBackup(),'button subtle'),el('label',{for:'backup-file',class:'section-gap'},'백업 파일 복원'),file);
   file.addEventListener('change',async()=>{const picked=file.files?.[0];if(!picked)return;try{if(picked.size>MAX_SIZE*4)throw new Error('백업 파일이 너무 큽니다.');const raw=new TextDecoder('utf-8',{fatal:true}).decode(await picked.arrayBuffer());if(!window.confirm('이 앱의 현재 기록을 백업 파일의 기록으로 바꿀까요? 다른 앱의 기록은 변경하지 않습니다.')){file.value='';return;}const ok=store.restore(raw);finishedSession=null;practice=null;saveNotice(ok);render();tick();}catch{notice('백업 형식이나 저장 상태를 확인하세요. 올바르지 않은 파일은 복원하지 않았습니다.');}finally{file.value='';}});
   backup.append(el('hr',{class:'divider'}),button('이 앱 기록 삭제',()=>{if(!window.confirm('정보처리기사 실기 학습실의 풀이·시험·설정 기록을 모두 삭제할까요? 다른 앱의 데이터는 삭제하지 않습니다.'))return;const ok=store.clear();if(ok){finishedSession=null;practice=null;}saveNotice(ok);render();},'button danger'));
-  content.append(el('div',{class:'settings-grid'},settings,backup),el('p',{class:'settings-note'},'풀이 최대 2048개·표시 문제 128개·완료 시험 20개를 보관하며 한도를 넘으면 오래된 기록부터 제외합니다. 동시 탭의 저장은 충돌할 수 있습니다. 같은 GitHub Pages 출처의 다른 앱도 브라우저 저장 공간에 접근할 수 있으므로 공용 기기에서는 사용 후 기록을 삭제하세요. 저장 실패나 손상은 안내하고 원본을 임의로 덮어쓰지 않습니다.'));
+  content.append(el('div',{class:'settings-grid'},settings,backup),el('p',{class:'settings-note'},'풀이 최대 2048개·표시 문제 128개·완료 시험 20개를 보관합니다. 기록 개수 또는 전체 1,048,576자 한도를 넘으면 오래된 풀이부터 제외하며 진행 중 답안은 유지합니다. 동시 탭의 저장은 충돌할 수 있습니다. 같은 GitHub Pages 출처의 다른 앱도 브라우저 저장 공간에 접근할 수 있으므로 공용 기기에서는 사용 후 기록을 삭제하세요. 저장 실패나 손상은 안내하고 원본을 임의로 덮어쓰지 않습니다.'));
   content.append(el('section',{class:'panel section-gap'},el('h3',{},'시험 안내와 제작 범위'),el('p',{class:'small muted'},'공식 실기는 필답형 150분이며 합격기준은 60/100입니다. 이 앱의 문제는 자체 제작 학습 자료이고 영역별 출제 비율·공식 채점표·합격확률을 예측하지 않습니다. 코드·SQL 변형은 배포 전 실제 실행 결과를 검사합니다. 브라우저 안에서는 임의의 사용자 코드를 실행하거나 AI에 답안을 보내지 않습니다.'),referenceLink('exam')));
   if(store.state.sessions.length)content.append(el('h2',{class:'section-gap'},'완료한 시험'),sessionRows());
 }
 function downloadBackup(){const url=URL.createObjectURL(new Blob([store.export()],{type:'application/json;charset=utf-8'})),a=el('a',{href:url,download:'engineer-practice-backup.json'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function printQuestions(codes,answers){
+function buildPrintSheet(codes,answers){
   if(answers&&store.state.active)return;
   const sheet=el('div',{class:'print-sheet'},el('h1',{},answers?'정보처리기사 실기 학습실 · 정답과 해설':'정보처리기사 실기 학습실 · 문제지'),el('p',{class:'small'},'2026 대비 자체 제작 · '+codes.length+'문항 · 문제 코드로 조건을 다시 찾을 수 있습니다.'));
   for(const [i,code]of codes.entries()){const q=getQuestion(code),section=el('article',{class:'print-item'},el('h3',{},`${i+1}. ${q.title} / ${code}`));if(answers)section.append(el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation));else section.append(questionBody(q,{showTitle:false}),el('div',{class:'write-lines','aria-label':'답안 작성 공간'}));sheet.append(section);}
-  $('print-area').replaceChildren(sheet);window.print();
+  $('print-area').replaceChildren(sheet);
 }
+function printQuestions(codes,answers){buildPrintSheet(codes,answers);window.print();}
+window.addEventListener('beforeprint',()=>{if(store.state.active)buildPrintSheet(store.state.active.codes,false);});
 function render(){
-  if(store.state.active&&['concepts','practice','review'].includes(route))route='exam';
+  if(store.state.active&&['concepts','practice','review','scope'].includes(route))route='exam';
   content.replaceChildren();$('page-label').textContent=names[route];
   for(const nav of document.querySelectorAll('[data-route]')){if(nav.dataset.route===route)nav.setAttribute('aria-current','page');else nav.removeAttribute('aria-current');}
-  ({home:renderHome,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,settings:renderSettings})[route]();notice();updateClock();
+  ({home:renderHome,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,scope:renderScope,settings:renderSettings})[route]();notice();updateClock();
 }
 function updateClock(){const session=store.state.active;const seconds=session?remainingSeconds(session):null;$('session-clock').hidden=seconds===null;if(seconds!==null)$('session-clock').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 function tick(){updateClock();if(store.state.active?.mode==='mock'&&remainingSeconds(store.state.active)===0)finishSession(true);}
@@ -163,6 +179,8 @@ for(const nav of document.querySelectorAll('[data-route]'))nav.addEventListener(
 window.addEventListener('hashchange',()=>{const value=location.hash.slice(1);if(Object.hasOwn(names,value)){route=value;render();}});
 window.addEventListener('storage',event=>{if(event.key!==KEY)return;store.refresh();if(!practice?.composing)render();});
 window.addEventListener('pagehide',()=>clearInterval(timer));
+window.addEventListener('focus',tick);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
 window.addEventListener('pageshow',()=>{clearInterval(timer);timer=setInterval(tick,1000);tick();});
 route=Object.hasOwn(names,location.hash.slice(1))?location.hash.slice(1):'home';
 render();timer=setInterval(tick,1000);tick();

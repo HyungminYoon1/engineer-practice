@@ -5,8 +5,8 @@ import { questionCodes, getQuestion, itemFamilies, selectCodes } from '../dist/s
 import { grade, sessionCodes, scoreSession, conceptStatus, reviewConcepts, remainingSeconds, DAY, nextVariant } from '../dist/src/engine.js';
 
 test('bounded original catalog, concepts, prerequisites and source lines',()=>{
-  assert.equal(concepts.length,88);assert.equal(questionCodes.length,304);assert.equal(new Set(questionCodes).size,304);
-  assert.equal(itemFamilies.length,30);const ids=new Set(concepts.map(c=>c.id));
+  assert.equal(concepts.length,134);assert.equal(questionCodes.length,583);assert.equal(new Set(questionCodes).size,583);
+  assert.equal(itemFamilies.length,70);const ids=new Set(concepts.map(c=>c.id));
   for(const c of concepts){assert.ok(c.rule&&c.prompt&&c.answers.length&&references[c.reference]);for(const id of c.prerequisites)assert.ok(ids.has(id));}
   for(const code of questionCodes){const q=getQuestion(code);assert.equal(q.code,code);assert.equal(q.source,'자체 제작');assert.ok(q.explanation&&q.expected);assert.ok(q.conceptIds.every(id=>ids.has(id)));
     if(q.sourceCode)for(const frame of q.trace)assert.ok(frame.line>0&&frame.line<=q.sourceCode.split('\n').length,code);
@@ -32,7 +32,7 @@ test('calculation references independently checked against fixed mathematical ca
   for(let v=0;v<5;v++){assert.equal(getQuestion('N03.'+v).expected,String(23+4*v));assert.equal(getQuestion('N04.'+v).expected,String(15+6*v));assert.equal(getQuestion('N05.'+v).expected,'9');assert.equal(getQuestion('N06.'+v).expected,'9');assert.equal(getQuestion('N07.'+v).expected,String(205-4*v));assert.equal(getQuestion('N08.'+v).expected,String(15+7*v));}
 });
 test('selection respects group, language and difficulty; variant cycle is bounded',()=>{
-  assert.equal(selectCodes({language:'c'}).length,48);assert.equal(selectCodes({language:'java'}).length,40);assert.equal(selectCodes({language:'sql'}).length,48);
+  assert.equal(selectCodes({language:'c'}).length,72);assert.equal(selectCodes({language:'java'}).length,56);assert.equal(selectCodes({language:'sql'}).length,95);
   assert.equal(selectCodes({group:'dev',language:'c'}).length,0);assert.ok(selectCodes({concept:'pointers'}).every(code=>getQuestion(code).conceptIds.includes('pointers')));
   assert.equal(nextVariant('C01.7'),'C01.0');assert.equal(nextVariant('T-pointers.0'),'T-pointers.0');assert.equal(nextVariant('bad'),null);
 });

@@ -1,4 +1,5 @@
 import { concepts } from './curriculum.js';
+import { caseFamilies } from './casebook.js';
 export const VARIANTS = 8;
 const step = (line, label, values, output = '') => ({line,label,values,output});
 const rowText = rows => rows.map(row=>row.map(value=>value===null?'NULL':String(value)).join('|')).join('\n');
@@ -21,7 +22,7 @@ family('C03','구조체 복사와 포인터 인수','c',['structs','functions'],
   return {code:'#include <stdio.h>\nstruct Pair { int x, y; };\nvoid update(struct Pair *p, int k) {\n  p->x += k;\n  p->y *= 2;\n}\nint main(void) {\n'+`  struct Pair a = {${a}, ${b}};\n  struct Pair copy = a;\n  update(&a, ${k});\n`+'  printf("%d %d %d", a.x, a.y, copy.x);\n  return 0;\n}',expected:output,trace:[step(8,'원본 생성',{'a.x':a,'a.y':b}),step(9,'값을 복사',{'copy.x':a,'copy.y':b}),step(4,'포인터로 원본 필드 변경',{'a.x':a+k,'copy.x':a}),step(5,'두 번째 원본 필드 변경',{'a.y':b*2}),step(11,'출력',{},output)],explanation:'copy에는 두 정수 필드가 값으로 복사됩니다. update는 &a를 받아 원본만 변경하므로 copy.x는 유지됩니다.'};
 });
 family('C04','재귀의 반환 누적','c',['recursion','functions'],3,v=>{
-  const n=3+v%4,trace=[];for(let i=n;i>=1;i--)trace.push(step(3,'하위 호출을 기다림',{n:i,stack:Array.from({length:n-i+1},(_,j)=>n-j).join(' → ')}));let value=1;trace.push(step(3,'종료 조건',{n:1,value}));for(let i=2;i<=n;i++){value+=2*i;trace.push(step(4,'반환값에 현재 n의 항을 더함',{n:i,value}));}const output=String(value);
+  const n=3+v%4,trace=[];for(let i=n;i>=2;i--)trace.push(step(4,'하위 호출을 기다림',{n:i,stack:Array.from({length:n-i+1},(_,j)=>n-j).join(' → ')}));let value=1;trace.push(step(3,'종료 조건',{n:1,value}));for(let i=2;i<=n;i++){value+=2*i;trace.push(step(4,'반환값에 현재 n의 항을 더함',{n:i,value}));}const output=String(value);
   return {code:'#include <stdio.h>\nint f(int n) {\n  if (n <= 1) return 1;\n  return f(n - 1) + 2 * n;\n}\nint main(void) {\n'+`  printf("%d", f(${n}));\n`+'  return 0;\n}',expected:output,trace:[...trace,step(7,'출력',{},output)],explanation:'호출할 때의 n을 각각 유지합니다. f(1)=1에서 시작해 반환하면서 2n을 더하며 f(n)=n(n+1)-1입니다.'};
 });
 family('C05','문자 배열의 부분 문자열','c',['strings','pointers'],2,v=>{
@@ -31,6 +32,11 @@ family('C05','문자 배열의 부분 문자열','c',['strings','pointers'],2,v=
 family('C06','비트 연산과 분기','c',['operators','branches'],3,v=>{
   const x=9+v,y=2+v,z0=(x&7)^(y<<1),even=(z0&1)===0,z=even?z0+x:z0-y,output=String(z);
   return {code:cMain([`int x = ${x}, y = ${y};`,'int z = (x & 7) ^ (y << 1);','if ((z & 1) == 0) z += x;','else z -= y;','printf("%d", z);']),expected:output,trace:[step(3,'초기값',{x,y}),step(4,'AND·시프트·XOR 순서',{low:x&7,shift:y<<1,z:z0}),step(even?5:6,even?'짝수 분기':'홀수 분기',{z}),step(7,'출력',{},output)],explanation:'먼저 괄호 안의 두 피연산자를 구하고 XOR합니다. z의 최하위 비트로 짝수·홀수를 판단해 해당 분기만 실행합니다.'};
+});
+family('C07','이중 포인터와 별칭의 분리','c',['pointers','objects'],3,v=>{
+  const a=[5+v,9+v,13+v,17+v],k=2+v,first=a[1]+k,last=first+a[0],output=`${last} ${a[3]} ${last}`;
+  return {code:cMain([`int a[] = {${a.join(', ')}};`,'int *p = a;','int **pp = &p;','(*pp)++;',`**pp += ${k};`,'int *q = p;','*pp = a + 3;','*q += a[0];','printf("%d %d %d", a[1], *p, *q);']),expected:output,
+    trace:[step(5,'pp는 p 변수의 주소',{pp:'&p',p:'a[0]'}),step(6,'p가 다음 요소로 이동',{p:'a[1]'}),step(7,'두 번 역참조하면 a[1]',{'a[1]':first}),step(8,'q에 현재 참조값 복사',{q:'a[1]'}),step(9,'p만 다시 이동',{p:'a[3]',q:'a[1]'}),step(10,'q가 가리키는 요소 변경',{'a[1]':last}),step(11,'출력',{},output)],explanation:'pp는 p를 바꾸지만 이미 복사된 q는 따라 이동하지 않습니다. p와 q가 가리키는 요소를 따로 추적합니다.'};
 });
 family('J01','필드 숨김과 동적 메서드','java',['inheritance','overriding'],3,v=>{
   const a=4+v,b=9+2*v,output=`${a} ${a+b}`;return {code:`class Base {\n  int n = ${a};\n  int value() { return n * 2; }\n}\nclass Child extends Base {\n  int n = ${b};\n  @Override int value() { return n + super.n; }\n}\n`+javaMain(['Base ref = new Child();','System.out.print(ref.n + " " + ref.value());']),expected:output,trace:[step(11,'선언형과 실제 객체를 구분',{declared:'Base',actual:'Child','Base.n':a,'Child.n':b}),step(12,'필드는 선언형 Base의 필드',{field:a}),step(7,'메서드는 Child의 재정의 호출',{method:'Child.value()',value:a+b}),step(12,'출력',{},output)],explanation:'ref.n은 Base의 필드입니다. ref.value()는 실제 Child 객체의 오버라이딩 메서드를 호출하며 Child.n과 super.n을 더합니다.'};
@@ -47,6 +53,11 @@ family('J04','열거형의 값과 순서','java',['enum','arrays'],2,v=>{
 family('J05','예외 분기와 finally','java',['exceptions','branches'],3,v=>{
   const n=3+v,k=2+v%3,c=4,d=2,initial=n+k,exception=initial%2===0,after=exception?initial-c:initial*2,output=String(after+d);return {code:javaMain([`int x = ${n};`,'try {',`  x += ${k};`,'  if (x % 2 == 0) throw new IllegalStateException();','  x *= 2;','} catch (IllegalStateException ex) {',`  x -= ${c};`,'} finally {',`  x += ${d};`,'}','System.out.print(x);']),expected:output,trace:[step(3,'초기값',{x:n}),step(5,'try의 첫 변경',{x:initial}),step(6,exception?'예외를 던져 catch로 이동':'예외 없이 다음 문장 진행',{condition:exception}),step(exception?9:7,exception?'catch에서 감소':'try에서 두 배',{x:after}),step(11,'finally는 두 경우 모두 실행',{x:after+d}),step(13,'출력',{},output)],explanation:'예외가 발생하면 x*=2는 실행되지 않습니다. catch 또는 정상 try를 마친 뒤 finally의 증가가 적용됩니다.'};
 });
+family('J06','객체 변경과 매개변수 재대입','java',['objects','functions'],3,v=>{
+  const n=3+v,k=2+v,output=`${n+k+1} ${n+k+1}`;
+  return {code:`class Box {\n  int value;\n  Box(int v) { value = v; }\n}\npublic class Main {\n  static void change(Box b, int k) {\n    b.value += k;\n    b = new Box(99);\n    b.value += 100;\n  }\n  public static void main(String[] args) {\n    Box x = new Box(${n});\n    Box y = x;\n    change(x, ${k});\n    y.value++;\n    System.out.print(x.value + " " + y.value);\n  }\n}`,expected:output,
+    trace:[step(13,'두 이름은 같은 원본 객체',{x:n,y:n}),step(7,'전달된 참조로 원본 변경',{original:n+k}),step(8,'지역 매개변수 b만 새 객체로 교체',{b:99,x:n+k}),step(9,'새 객체만 변경',{b:199,x:n+k}),step(15,'y를 통해 원본 증가',{original:n+k+1}),step(16,'같은 원본 값을 두 번 출력',{},output)],explanation:'Java는 참조값도 값으로 전달합니다. b.value 변경은 공유 객체에 반영되지만 b 자체의 재대입은 호출자의 x를 바꾸지 않습니다.'};
+});
 family('P01','중첩 리스트의 얕은 복사','python',['py-sequence','objects'],3,v=>{
   const n=2+v,m=8+v,k=5+v,t=11+v,output=`2 3 ${t} ${k}`;return {code:`a = [[${n}, ${m}], [${k}]]\nb = a[:]\nb[0].append(${t})\nb.append([${t+1}])\nprint(len(a), len(b), a[0][-1], a[1][0])`,expected:output,trace:[step(1,'바깥·안쪽 리스트 생성',{a:`[[${n}, ${m}], [${k}]]`}),step(2,'바깥만 새 리스트, 안쪽은 공유',{outer:'a와 b는 다름',inner:'a[0]과 b[0]은 같음'}),step(3,'공유 안쪽에 추가',{a:`[[${n}, ${m}, ${t}], [${k}]]`}),step(4,'b의 바깥에만 추가',{'len(a)':2,'len(b)':3}),step(5,'출력',{},output)],explanation:'a[:]는 바깥 리스트의 얕은 복사입니다. b[0]을 통한 안쪽 변경은 a에도 보이지만 b.append는 a의 바깥 길이를 바꾸지 않습니다.'};
 });
@@ -62,6 +73,11 @@ family('P04','기본 인수의 객체 재사용','python',['functions','py-seque
 });
 family('P05','람다의 참조와 기본값 바인딩','python',['functions','variables'],3,v=>{
   const n=3+v%4,output=`${n-1} 0 ${n-1}`;return {code:`funcs = [lambda: i for i in range(${n})]\nfixed = [lambda j=j: j for j in range(${n})]\nprint(funcs[0](), fixed[0](), fixed[-1]())`,expected:output,trace:[step(1,'첫 목록은 같은 나중의 i 값을 조회',{count:n,last_i:n-1}),step(2,'두 번째 목록은 정의 시의 j를 기본값으로 보관',{defaults:Array.from({length:n},(_,i)=>i).join(', ')}),step(3,'호출 시 조회와 정의 시 저장의 차이',{},output)],explanation:'첫 목록의 함수들은 호출 시 같은 i의 최종값을 조회합니다. lambda j=j는 각 생성 시 j의 값을 기본 인수에 보관합니다.'};
+});
+
+family('P06','집합과 중첩 컴프리헨션','python',['py-set','comprehension'],3,v=>{
+  const values=[v+1,v+2,v+2,v+3,v+4],unique=[...new Set(values)].sort((a,b)=>a-b),pairs=unique.flatMap(x=>unique.filter(y=>x<y&&(x+y)%2===0).map(y=>x*y)),output=`${unique.length} ${pairs.reduce((a,b)=>a+b,0)} ${pairs.length}`;
+  return {code:`xs = [${values.join(', ')}]\nunique = sorted(set(xs))\npairs = [x * y for x in unique for y in unique if x < y and (x + y) % 2 == 0]\nprint(len(unique), sum(pairs), len(pairs))`,expected:output,trace:[step(2,'중복 제거 후 정렬',{unique:unique.join(', ')}),step(3,'서로 다르고 합이 짝수인 쌍의 곱',{pairs:pairs.join(', ')}),step(4,'원소 수·합·쌍 수 출력',{},output)],explanation:'집합 순회 결과를 그대로 출력하지 않고 정렬합니다. 두 반복의 후보를 만든 뒤 x<y와 짝수 합 조건을 모두 검사합니다.'};
 });
 
 function sqlFixture(v) {
@@ -85,7 +101,7 @@ sqlFamily('S02','WHERE·GROUP BY·HAVING',['sql-group','sql-null'],3,(v,d)=>{
 sqlFamily('S03','상관 서브쿼리와 평균',['sql-subquery','sql-group'],3,(v,d)=>{
   const qty=d.orders.filter(o=>o[3]==='DONE'&&o[2]!==null).map(o=>o[2]),avg=qty.reduce((a,b)=>a+b,0)/qty.length;
   const rows=d.members.filter(m=>d.orders.some(o=>o[1]===m[0]&&o[2]!==null&&o[2]>avg)).map(m=>[m[0],m[1]]),output=rowText(rows);
-  return {code:"SELECT m.id, m.name\nFROM members m\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.member_id = m.id\n    AND o.qty > (SELECT AVG(qty) FROM orders WHERE state = 'DONE')\n)\nORDER BY m.id;",expected:output,headers:['id','name'],trace:[step(6,'DONE의 NULL 아닌 수량으로 전체 평균 계산',{values:qty.join(', '),average:Number(avg.toFixed(4))}),step(5,'회원마다 조건을 만족하는 주문 존재 여부 확인',{matchedIds:rows.map(r=>r[0]).join(', ')}),{...step(8,'선택된 회원 결과',{},output),table:{headers:['id','name'],rows}}],explanation:'안쪽 AVG는 DONE만 대상으로 하지만 바깥 EXISTS의 주문에는 DONE 조건이 없습니다. 이 두 범위를 혼동하지 마세요.'};
+  return {code:"SELECT m.id, m.name\nFROM members m\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.member_id = m.id\n    AND o.qty > (SELECT AVG(qty) FROM orders WHERE state = 'DONE')\n)\nORDER BY m.id;",expected:output,headers:['id','name'],trace:[step(6,'DONE의 NULL 아닌 수량으로 전체 평균 계산',{values:qty.join(', '),average:`${qty.reduce((a,b)=>a+b,0)}/${qty.length} ≈ ${avg.toFixed(4)}`}),step(5,'회원마다 조건을 만족하는 주문 존재 여부 확인',{matchedIds:rows.map(r=>r[0]).join(', ')}),{...step(8,'선택된 회원 결과',{},output),table:{headers:['id','name'],rows}}],explanation:'안쪽 AVG는 DONE만 대상으로 하지만 바깥 EXISTS의 주문에는 DONE 조건이 없습니다. 이 두 범위를 혼동하지 마세요.'};
 });
 sqlFamily('S04','NOT IN과 NULL',['sql-null','sql-subquery'],3,(v,d)=>({code:"SELECT id FROM members\nWHERE id NOT IN (SELECT member_id FROM orders WHERE state = 'OPEN')\nORDER BY id;",expected:'없음',nativeExpected:'',kind:'term',aliases:['없음','결과 없음','∅','empty'],prompt:'결과가 비어 있으면 ‘없음’, 아니면 id를 순서대로 쓰세요.',trace:[step(2,'안쪽 목록에 NULL이 존재',{open:d.orders.filter(o=>o[3]==='OPEN').map(o=>o[1]===null?'NULL':o[1]).join(', ')}),step(2,'일치하지 않는 값도 UNKNOWN이라 WHERE 통과 못함',{rows:0},'없음')],explanation:'NOT IN의 목록에 NULL이 있으면 비일치 후보의 결과도 UNKNOWN이 될 수 있습니다. WHERE는 TRUE인 행만 남겨 결과가 비어 있습니다.'}));
 sqlFamily('S05','CROSS JOIN과 LIKE',['sql-join','sql-select'],2,(v,d)=>{
@@ -97,6 +113,23 @@ sqlFamily('S06','UNION ALL의 중복',['sql-select','sql-subquery'],2,(v,d)=>{
   return {code:`SELECT member_id AS id FROM orders WHERE qty >= ${threshold} AND member_id IS NOT NULL\nUNION ALL\nSELECT id FROM members WHERE team = 'A'\nORDER BY id;`,expected:output,headers:['id'],trace:[{...step(1,'첫 조회 결과',{}),table:{headers:['id'],rows:first}},{...step(3,'두 번째 조회 결과',{}),table:{headers:['id'],rows:second}},{...step(2,'ALL이므로 중복을 보존하고 정렬',{},output),table:{headers:['id'],rows}}],explanation:'UNION ALL은 두 결과의 중복을 제거하지 않습니다. UNION이라면 중복이 제거되지만 이 문제에는 ALL이 있습니다.'};
 });
 
+family('S07','동점 순위와 팀별 구간','sql',['sql-window','sql-group'],3,v=>{
+  const rows=[[1,'A',90-v],[2,'A',v%2?60+v:90-v],[3,'A',60+v],[4,'B',70+v],[5,'B',50+v]],out=rows.map(([id,team,score])=>{const peers=rows.filter(r=>r[1]===team);return[id,1+peers.filter(r=>r[2]>score).length,1+new Set(peers.filter(r=>r[2]>score).map(r=>r[2])).size];}),output=rowText(out);
+  return {schema:'CREATE TABLE scores(id INTEGER, team TEXT, score INTEGER);\nINSERT INTO scores VALUES '+rows.map(r=>`(${r[0]},'${r[1]}',${r[2]})`).join(',')+';',tables:[{name:'scores',headers:['id','team','score'],rows}],dialect:'SQLite',code:'SELECT id,\n  RANK() OVER (PARTITION BY team ORDER BY score DESC) AS r,\n  DENSE_RANK() OVER (PARTITION BY team ORDER BY score DESC) AS dr\nFROM scores\nORDER BY id;',expected:output,trace:[step(2,'팀별로 점수 순위 계산',{rule:'동점은 같은 순위'}),{...step(3,'RANK는 뒤 순위에 간격, DENSE_RANK는 간격 없음',{},output),table:{headers:['id','r','dr'],rows:out}}],explanation:'OVER 안의 정렬은 순위를 계산하는 기준입니다. 결과 행의 표시 순서는 마지막 ORDER BY id입니다. 동점 다음의 RANK와 DENSE_RANK를 구별합니다.'};
+});
+family('S08','행 변경과 감사 트리거','sql',['trigger','sql-dml'],3,v=>{
+  const rows=[[1,10+v],[2,20+v]],k=3+v,changed=rows.filter(r=>v%2||r[0]===1).map(r=>[r[0],r[1],r[1]+k]),setup='CREATE TRIGGER capture AFTER UPDATE OF qty ON items\nBEGIN\n  INSERT INTO audit VALUES (NEW.id, OLD.qty, NEW.qty);\nEND;\n'+`UPDATE items SET qty = qty + ${k}${v%2?'':' WHERE id = 1'};`,query='SELECT id, old_qty, new_qty FROM audit ORDER BY id;',output=rowText(changed);
+  return {schema:`CREATE TABLE items(id INTEGER PRIMARY KEY, qty INTEGER);\nCREATE TABLE audit(id INTEGER, old_qty INTEGER, new_qty INTEGER);\nINSERT INTO items VALUES (1,${rows[0][1]}),(2,${rows[1][1]});`,nativeSetup:setup,nativeCode:query,dialect:'SQLite',tables:[{name:'items (변경 전)',headers:['id','qty'],rows},{name:'audit (변경 전)',headers:['id','old_qty','new_qty'],rows:[]}],code:setup+'\n'+query,expected:output,trace:[step(1,'UPDATE에 연결된 트리거 정의',{event:'qty 변경'}),step(5,'조건에 맞는 행만 갱신',{changedIds:changed.map(r=>r[0]).join(', ')}),{...step(3,'각 행의 OLD·NEW를 감사 표에 기록',{},output),table:{headers:['id','old_qty','new_qty'],rows:changed}}],explanation:'SQLite의 이 트리거는 변경된 각 행마다 실행됩니다. OLD는 변경 전, NEW는 변경 후 값입니다. WHERE 조건이 없으면 두 행이 모두 변경됩니다.'};
+});
+family('S09','트랜잭션 확정과 취소','sql',['transaction','acid'],3,v=>{
+  const before=[[1,100+10*v],[2,50+v]],k=7+v,changed=[[1,before[0][1]-k],[2,before[1][1]+k]],commit=v%2===1,after=commit?changed:before,setup=`BEGIN TRANSACTION;\nUPDATE accounts SET balance = balance - ${k} WHERE id = 1;\nUPDATE accounts SET balance = balance + ${k} WHERE id = 2;\n${commit?'COMMIT':'ROLLBACK'};`,query='SELECT id, balance FROM accounts ORDER BY id;',output=rowText(after);
+  return {schema:`CREATE TABLE accounts(id INTEGER PRIMARY KEY, balance INTEGER);\nINSERT INTO accounts VALUES (1,${before[0][1]}),(2,${before[1][1]});`,nativeSetup:setup,nativeCode:query,dialect:'SQLite',tables:[{name:'accounts (변경 전)',headers:['id','balance'],rows:before}],code:setup+'\n'+query,expected:output,trace:[{...step(3,'트랜잭션 안에서 두 변경',{}),table:{headers:['id','balance'],rows:changed}},{...step(4,commit?'변경을 확정':'두 변경 모두 취소',{},output),table:{headers:['id','balance'],rows:after}}],explanation:commit?'COMMIT이 두 잔액 변경을 확정합니다. 두 계좌의 합계는 유지됩니다.':'ROLLBACK은 이번 트랜잭션의 두 UPDATE를 모두 취소하여 시작 전 잔액으로 돌아갑니다.'};
+});
+family('S10','재귀 CTE의 종료 조건','sql',['sql-subquery','recursion'],3,v=>{
+  const n=4+v,output=String(n*(n+1)/2);
+  return {schema:'',dialect:'SQLite',code:`WITH RECURSIVE seq(n) AS (\n  SELECT 1\n  UNION ALL\n  SELECT n + 1 FROM seq WHERE n < ${n}\n)\nSELECT SUM(n) FROM seq;`,expected:output,kind:'number',trace:[step(2,'시작 행 생성',{n:1}),step(4,'이전 행을 기준으로 다음 값 생성',{sequence:Array.from({length:n},(_,i)=>i+1).join(', ')}),step(6,'종료 조건까지의 값을 합산',{sum:Number(output)},output)],explanation:`WHERE는 이전 n을 검사하므로 ${n}까지 생성됩니다. ${n+1}은 생성하지 않습니다. 이 문제는 종료 조건이 있는 유한 재귀 CTE입니다.`};
+});
+
 function numeric(id,title,conceptIds,difficulty,build) { families.push({id,title,language:'calculation',group:'systems',conceptIds,difficulty,variants:5,build}); }
 numeric('N01','일반 서브넷의 호스트 수',['subnet'],2,v=>{const prefix=25+v,hosts=2**(32-prefix)-2;return {prompt:`일반적인 IPv4 /${prefix} 서브넷에서 네트워크·브로드캐스트 주소를 제외한 사용 가능 호스트 수를 정수로 쓰세요. /31·/32 예외는 다루지 않습니다.`,expected:String(hosts),trace:[step(1,'호스트 비트 수',{bits:32-prefix}),step(1,'전체 주소에서 예약 두 개 제외',{all:2**(32-prefix),hosts},String(hosts))],explanation:'남은 호스트 비트로 표현하는 전체 주소 수는 2의 거듭제곱입니다. 이 문제의 일반 서브넷에서는 두 주소를 제외합니다.'};});
 numeric('N02','네트워크 주소의 마지막 옥텟',['subnet','operators'],2,v=>{const prefix=26+v%3,ip=93+v*19,block=2**(32-prefix),network=Math.floor(ip/block)*block;return {prompt:`IPv4 주소 192.168.8.${ip}/${prefix}의 네트워크 주소에서 마지막 옥텟만 정수로 쓰세요.`,expected:String(network),trace:[step(1,'서브넷 주소 블록 크기',{block}),step(1,'주소가 포함된 블록의 시작',{ip,network},String(network))],explanation:`마지막 옥텟을 ${block} 단위로 나눈 블록의 시작값입니다. 비트 AND 방식으로도 같은 결과를 얻습니다.`};});
@@ -105,10 +138,24 @@ numeric('N04','비선점 SJF 총 대기시간',['scheduling'],3,v=>{const bursts
 function pageFaults(sequence,size,lru){let frames=[],faults=0;const trace=[];sequence.forEach((page,i)=>{const hit=frames.includes(page);if(hit&&lru)frames=frames.filter(p=>p!==page);if(!hit){faults++;if(frames.length===size)frames.shift();}if(!hit||lru)frames.push(page);trace.push(step(i+1,`${page}: ${hit?'적중':'부재'}`,{frames:frames.join(' → '),faults}));});return {faults,trace};}
 for(const [id,title,lru] of [['N05','LRU 페이지 부재',true],['N06','FIFO 페이지 부재',false]])numeric(id,title,['replacement','paging'],3,v=>{const seq=[1,2,3,1,4,2,5,1,2,3,4].map(n=>n+v),r=pageFaults(seq,3,lru);return {prompt:`초기에 빈 프레임 3개, 참조열 ${seq.join(' → ')}입니다. ${lru?'LRU':'FIFO'}에서 총 페이지 부재 횟수를 쓰세요.`,expected:String(r.faults),trace:[...r.trace,step(seq.length+1,'총 부재 횟수',{},String(r.faults))],explanation:lru?'프레임을 오래 사용되지 않은 순서로 적었습니다. 적중한 페이지도 가장 최근 위치로 옮깁니다.':'프레임은 들어온 순서입니다. 적중은 순서를 바꾸지 않으며 가득 차면 가장 먼저 들어온 페이지를 교체합니다.'};});
 numeric('N07','디스크 FCFS 이동 거리',['scheduling'],2,v=>{const head=50+v*5,requests=[15+v,80-v,35+v*2,95-v],trace=[];let at=head,total=0;requests.forEach((next,i)=>{const distance=Math.abs(next-at);total+=distance;trace.push(step(i+1,'다음 요청으로 이동',{from:at,to:next,distance,total}));at=next;});return {prompt:`디스크 헤드가 ${head}번 트랙에 있습니다. 요청 순서는 ${requests.join(' → ')}입니다. FCFS의 총 이동 거리를 정수로 쓰세요.`,expected:String(total),trace:[...trace,step(5,'총 절대 이동 거리',{},String(total))],explanation:'요청 순서대로 이동하며 매 구간의 절대 차이를 더합니다. 마지막 위치와 첫 위치의 차이만 구하는 것이 아닙니다.'};});
-numeric('N08','후위 표기식과 스택',['loops'],3,v=>{const a=2+v,b=3+v,c=4,d=5+v,tokens=[a,b,'+',c,'*',d,'-'],stack=[],trace=[];for(const token of tokens){if(typeof token==='number')stack.push(token);else{const right=stack.pop(),left=stack.pop();stack.push(token==='+'?left+right:token==='*'?left*right:left-right);}trace.push(step(trace.length+1,`${token} 처리`,{stack:stack.join(' → ')}));}return {prompt:`후위 표기식 ${tokens.join(' ')}의 계산 결과를 쓰세요. 피연산자는 정수이며 뺄셈은 먼저 꺼낸 값이 오른쪽 피연산자입니다.`,expected:String(stack[0]),trace:[...trace,step(tokens.length+1,'최종 스택값',{},String(stack[0]))],explanation:'숫자를 넣고 연산자를 만나면 오른쪽·왼쪽 순서로 꺼냅니다. 뺄셈의 두 피연산자 순서를 바꾸지 마세요.'};});
+numeric('N08','후위 표기식과 스택',['stack'],3,v=>{const a=2+v,b=3+v,c=4,d=5+v,tokens=[a,b,'+',c,'*',d,'-'],stack=[],trace=[];for(const token of tokens){if(typeof token==='number')stack.push(token);else{const right=stack.pop(),left=stack.pop();stack.push(token==='+'?left+right:token==='*'?left*right:left-right);}trace.push(step(trace.length+1,`${token} 처리`,{stack:stack.join(' → ')}));}return {prompt:`후위 표기식 ${tokens.join(' ')}의 계산 결과를 쓰세요. 피연산자는 정수이며 뺄셈은 먼저 꺼낸 값이 오른쪽 피연산자입니다.`,expected:String(stack[0]),trace:[...trace,step(tokens.length+1,'최종 스택값',{},String(stack[0]))],explanation:'숫자를 넣고 연산자를 만나면 오른쪽·왼쪽 순서로 꺼냅니다. 뺄셈의 두 피연산자 순서를 바꾸지 마세요.'};});
 
-export const itemFamilies = Object.freeze(families.map(f=>Object.freeze({...f,conceptIds:Object.freeze(f.conceptIds)})));
-const termFamilies=concepts.map(c=>({id:'T-'+c.id,title:c.title,group:c.group,language:'term',difficulty:2,conceptIds:[c.id],variants:1,build:()=>({prompt:c.prompt,expected:c.answers[0],aliases:c.answers,kind:'term',explanation:c.rule+' '+c.pitfall,trace:[]})}));
+families.push({id:'D01',title:'결정 커버리지의 최소 테스트 집합',language:'calculation',group:'dev',conceptIds:['coverage','whitebox'],difficulty:3,variants:5,build:v=>{
+  const patterns=v%2?[[1,1,1],[1,0,0],[0,1,0],[0,0,1]]:[[1,1,0],[1,0,0],[0,1,1],[0,0,1]],cases=patterns.map(row=>row.map((_,i)=>row[(i+v)%3]));let best=null;
+  for(let mask=1;mask<16;mask++){const chosen=cases.filter((_,i)=>mask&(1<<i));if([0,1,2].every(i=>new Set(chosen.map(row=>row[i])).size===2)&&(!best||chosen.length<best.count))best={count:chosen.length,ids:cases.map((_,i)=>mask&(1<<i)?'T'+(i+1):null).filter(Boolean)};}
+  return {prompt:'서로 다른 결정문 D1·D2·D3의 참/거짓 결과는 아래 표와 같습니다. 세 결정문 모두 참과 거짓을 한 번 이상 수행하도록 준비된 테스트를 골라야 합니다. 필요한 최소 테스트 개수를 정수로 쓰세요.',tables:[{name:'준비된 테스트의 결정 결과',headers:['테스트','D1','D2','D3'],rows:cases.map((row,i)=>['T'+(i+1),...row.map(x=>x?'T':'F')])}],kind:'number',expected:String(best.count),trace:[step(1,'각 열에 참·거짓이 모두 있어야 함',{targets:'D1 T/F, D2 T/F, D3 T/F'}),step(1,'가장 작은 충족 집합의 예',{chosen:best.ids.join(', '),count:best.count},String(best.count))],explanation:`예를 들어 ${best.ids.join(', ')}를 선택하면 모든 열에 T와 F가 나타납니다. ${best.count-1}개 이하의 어떤 선택도 여섯 결과를 모두 채우지 못합니다. 이것은 조건 커버리지나 모든 경로 커버리지와 다른 기준입니다.`};
+}});
+families.push({id:'D02',title:'함수 종속으로 정규형 판단',language:'scenario',group:'db',conceptIds:['fd','normal-2nf','normal-3nf','normal-bcnf'],difficulty:3,variants:5,build:v=>{
+  const additions=['A → C','C → D','없음','B → D','D → C'],expected=['1NF','2NF','BCNF','1NF','2NF'][v],reason=['비주요 C가 키의 일부 A에 종속되어 2NF를 위반합니다.','비주요 D가 비주요 C를 거쳐 종속되어 3NF를 위반합니다.','비자명 종속의 결정자는 후보키 AB이며 BCNF를 만족합니다.','비주요 D가 키의 일부 B에 종속되어 2NF를 위반합니다.','비주요 C가 비주요 D를 거쳐 종속되어 3NF를 위반합니다.'][v];
+  return {prompt:`관계 R(A,B,C,D)의 속성은 모두 원자값이며, 유일한 후보키는 {A,B}입니다. 함수 종속의 기저는 AB → C,D${v===2?'뿐입니다.':`와 ${additions[v]}입니다.`} 1NF·2NF·3NF·BCNF 중 이 관계가 만족하는 가장 높은 정규형을 쓰세요.`,kind:'term',expected,aliases:expected==='BCNF'?['BCNF','보이스 코드 정규형']:[expected,'제'+expected[0]+'정규형',expected[0]+'정규형'],trace:[step(1,'후보키와 비주요 속성을 구분',{candidate:'AB',nonprime:'C, D'}),step(1,'부분 종속·이행 종속·결정자를 순서대로 검사',{additional:additions[v]},expected)],explanation:reason+' 1NF는 원자값이라는 조건으로 주어졌습니다. 정규형 이름만 기억하지 말고 종속의 왼쪽과 오른쪽이 각각 어떤 속성인지 확인합니다.'};
+}});
+numeric('D03','UNIX 권한을 8진 숫자로 표시',['unix-permission','operators'],2,v=>{
+  const symbolic=['rwxr-xr--','rw-r-----','rwxr-x--x','rw-------','rw-rw-r--'][v],digits=[0,3,6].map(i=>(symbolic[i]==='r'?4:0)+(symbolic[i+1]==='w'?2:0)+(symbolic[i+2]==='x'?1:0));
+  return {prompt:`일반 파일의 권한 ${symbolic}을 chmod의 소유자·그룹·기타 사용자 순서 세 자리 8진 모드로 쓰세요. 특수 비트는 없습니다.`,kind:'number',expected:digits.join(''),trace:[step(1,'세 사용자 집단으로 분리',{owner:symbolic.slice(0,3),group:symbolic.slice(3,6),other:symbolic.slice(6)}),step(1,'각 집단에서 r=4, w=2, x=1 합산',{digits:digits.join(' / ')},digits.join(''))],explanation:'전체 문자열을 십진수 하나로 계산하는 것이 아니라 세 집단의 비트 합을 각각 8진 숫자로 표시합니다. 실제 파일 권한은 이 앱에서 변경하지 않습니다.'};
+});
+
+export const itemFamilies = Object.freeze([...families,...caseFamilies].map(f=>Object.freeze({...f,conceptIds:Object.freeze(f.conceptIds)})));
+const termFamilies=concepts.map(c=>({id:'T-'+c.id,title:c.title,group:c.group,language:'term',difficulty:1,conceptIds:[c.id],variants:1,build:()=>({prompt:c.prompt,expected:c.answers[0],aliases:c.answers,kind:'term',explanation:c.rule+' '+c.pitfall,trace:[]})}));
 export const allFamilies=Object.freeze([...itemFamilies,...termFamilies]);
 const questionCache=new Map();
 export function getQuestion(code) {
@@ -127,3 +174,5 @@ export const questionCodes=Object.freeze(allFamilies.flatMap(f=>Array.from({leng
 export function selectCodes({group='all',language='all',difficulty='all',concept=null}={}) {
   return questionCodes.filter(code=>{const q=getQuestion(code);return(group==='all'||q.group===group)&&(language==='all'||q.language===language)&&(difficulty==='all'||q.difficulty===Number(difficulty))&&(!concept||q.conceptIds.includes(concept));});
 }
+export function familyChoices(codes=questionCodes){const map=new Map();for(const code of codes){const q=getQuestion(code);if(!q)continue;if(!map.has(q.family))map.set(q.family,{id:q.family,title:q.title,language:q.language,codes:[]});map.get(q.family).codes.push(code);}return [...map.values()];}
+export function nextFamilyCode(code,codes=questionCodes){const choices=familyChoices(codes);if(!choices.length)return null;const index=choices.findIndex(item=>item.id===getQuestion(code)?.family);return choices[(index+1)%choices.length].codes[0];}

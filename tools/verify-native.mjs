@@ -14,7 +14,7 @@ for(const code of questionCodes){const q=getQuestion(code);if(!Object.hasOwn(cou
   if(q.language==='c'){const file=join(work,'main.c'),exe=join(work,process.platform==='win32'?'main.exe':'main');writeFileSync(file,q.sourceCode,'utf8');run('gcc',['-std=c11','-Wall','-Wextra','-Werror','-O0',file,'-o',exe]);result=run(exe,[]);}
   if(q.language==='java'){const file=join(work,'Main.java');writeFileSync(file,q.sourceCode,'utf8');run('javac',['--release','17','-encoding','UTF-8','-d',work,file]);result=run('java',['-cp',work,'Main']);}
   if(q.language==='python')result=run('python',['-X','utf8','-c',q.sourceCode]);
-  if(q.language==='sql')result=run('python',['-X','utf8','-c',"import sqlite3,json,sys\np=json.load(sys.stdin)\nc=sqlite3.connect(':memory:')\nc.executescript(p['schema'])\nrows=c.execute(p['query']).fetchall()\nprint('\\n'.join('|'.join('NULL' if x is None else str(x) for x in row) for row in rows))"],{input:JSON.stringify({schema:q.schema,query:q.nativeCode??q.sourceCode})});
+  if(q.language==='sql')result=run('python',['-X','utf8','-c',"import sqlite3,json,sys\np=json.load(sys.stdin)\nc=sqlite3.connect(':memory:')\nc.executescript(p['schema'])\nrows=c.execute(p['query']).fetchall()\nprint('\\n'.join('|'.join('NULL' if x is None else str(x) for x in row) for row in rows))"],{input:JSON.stringify({schema:q.schema+(q.nativeSetup?'\n'+q.nativeSetup:''),query:q.nativeCode??q.sourceCode})});
   assert.equal(result,q.nativeExpected??q.expected,`Native mismatch ${code}`);counts[q.language]++;
 }
 console.log(JSON.stringify({status:'PASS',counts,total:Object.values(counts).reduce((a,b)=>a+b,0),versions,artifacts:root,scope:'All bounded original code/SQL variants. Output execution, not syntax-only; traces separately reviewed.'},null,2));
