@@ -14,4 +14,8 @@
 
 ## Remote
 
-- Repository, GitHub Actions, public Pages HTTP/browser: NOT_RUN. No local result is remote deployment evidence.
+- Public repository created, Pages uses workflow deployment: https://github.com/HyungminYoon1/engineer-practice.
+- Source `34a9d444616a97887414f4879b033a2646a4e0d0`: [Actions 38208133914](https://github.com/HyungminYoon1/engineer-practice/actions/runs/38208133914) verification and deployment SUCCESS, including native execution step on Ubuntu. This is separate from the Windows local run.
+- Public [app](https://hyungminyoon1.github.io/engineer-practice/): HTTP 200 and exact local/public bytes for index, CSS and all six source modules (8 files). Index SHA-256 `a665e0eeab827919378670d854b0cda7cf34d7161010631171be6f86c53c9ec0`.
+- Fresh isolated public Chrome: exact browser title ‘정보처리기사 실기 학습실’, normal practice navigation and correct typed C answer verified with no page errors. Full local regression is not relabelled as full live regression. No backend/Neon provisioned; no private user data sent or published.
+- Subsequent evidence-only commit changes this document, not dist; its deployment may redeploy identical app bytes. Preserve the tested app revision above.
