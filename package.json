@@ -1,0 +1,12 @@
+{
+  "name": "engineer-practice",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node tools/serve.mjs",
+    "test": "node --test",
+    "check": "node tools/check.mjs",
+    "verify:native": "node tools/verify-native.mjs"
+  }
+}

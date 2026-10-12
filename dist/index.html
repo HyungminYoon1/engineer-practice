@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="정보처리기사 실기 학습실. 개념 학습, 코드·SQL 추적, 직접 답안 작성, 복습과 모의시험.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-src 'none'">
+  <meta name="theme-color" content="#f6f7f2">
+  <title>정보처리기사 실기 학습실</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./src/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">학습 내용으로</a>
+  <aside class="rail" aria-label="주 메뉴">
+    <a class="brand" href="./" aria-label="정보처리기사 실기 학습실"><span class="brand-symbol" aria-hidden="true">정</span><span>정보처리기사<small>실기 학습실</small></span></a>
+    <p class="rail-label">WORKBOOK / 2026</p>
+    <nav class="main-nav" aria-label="학습 메뉴">
+      <button data-route="home" aria-current="page"><span>00</span>오늘 학습</button>
+      <button data-route="concepts"><span>01</span>개념 학습</button>
+      <button data-route="practice"><span>02</span>문제 풀이</button>
+      <button data-route="review"><span>03</span>복습 노트</button>
+      <button data-route="exam"><span>04</span>진단 · 모의시험</button>
+      <button data-route="settings"><span>05</span>학습 기록 · 설정</button>
+    </nav>
+    <div class="rail-bottom"><p>직접 쓰고,<br>과정을 확인합니다.</p><a href="https://hyungminyoon1.github.io/web-lab/">WEB LAB ↗</a><a href="https://github.com/HyungminYoon1/engineer-practice" target="_blank" rel="noopener noreferrer">소스 코드 ↗</a></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><span id="page-label">오늘 학습</span><div class="topbar-right"><span class="profile-label">2026 대비 · 자체 제작</span><span id="session-clock" class="clock" role="timer" aria-live="off" hidden></span></div></header>
+    <main>
+      <p id="storage-notice" class="notice" role="status" hidden></p>
+      <section id="content" tabindex="-1" aria-label="학습 내용"></section>
+    </main>
+    <footer>정보처리기사 실기 학습실 <span>기록은 이 브라우저에 저장됩니다.</span><a href="https://www.q-net.or.kr/crf005.do?id=crf00503s02&amp;jmCd=1320&amp;jmInfoDivCcd=B0" target="_blank" rel="noopener noreferrer">공식 시험 안내 ↗</a></footer>
+  </div>
+  <section id="print-area" aria-label="인쇄 문서"></section>
+  <noscript><p>이 학습 앱을 사용하려면 JavaScript를 켜주세요. 시험 방식과 출제기준은 Q-Net에서 확인할 수 있습니다.</p></noscript>
+</body>
+</html>
