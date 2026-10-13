@@ -1,5 +1,15 @@
 # Verification — 2026-10-12
 
+## 2026-10-13 — backup roundtrip and guided learning / LOCAL
+
+- SOURCE VERIFIED: architecture, requirements, README, decisions, content sources, application/view/storage/engine and relevant bank, regression/native/dialect/check paths. Repository as a whole is PARTIAL: no independent new review of every historical question and every third-party runtime.
+- RED_GREEN: near-capacity readable backup was rejected by its own importer. Two regression tests first failed, then passed with a separate bounded formatting allowance and unchanged canonical storage limit. Invalid schema and genuinely oversized records preserve existing state and unrelated keys. No v1 migration or remote DB.
+- CONTENT: six original guided paths, 24 reasoning steps and six explanation checks link existing concepts and verified example/practice pairs. Existing 134 concepts / 70 applied families / 583 questions stay unchanged. Reading an example does not grant mastery; active mock exams cannot open guide answers. Sources and decisions D09/D10 record scope.
+- LOCAL_NATIVE: C72 + Java56 + Python56 + SQLite95 = 279 executed variants PASS. LOCAL_DIALECTS: PostgreSQL18.4 DCL5 + MySQL8.4.11 procedures5/functions5 = 15 PASS. Disposable no-network containers removed by the test. This is program correctness evidence, not an exam pass prediction.
+- BROWSER_LOCAL: all six guides selected, worked examples and self-checks revealed; different security variant typed and graded correctly. Example trace source highlighting, next/back, active mock answer guard and invalid backup rejection checked. A synthetic near-capacity Korean backup (1,047,209 compact characters; 1,109,447 readable characters; 2,919,247 UTF-8 bytes) was imported and downloaded through real controls with exact state equality. No actual user records accessed.
+- VISUAL: desktop1440x1000 and mobile320x844 selected guide screens reviewed, no root horizontal overflow or observed page exceptions. QA artifacts remain outside dist in ../output/qa-20261013. Native/dialect verification is separate from browser evidence. Physical devices, every browser, human study effectiveness and all original questions individually UI-played remain NOT_RUN.
+- Publication evidence for this maintenance is consolidated in WEB LAB docs/maintenance-20261013.md; historical results below remain tied to their earlier revisions.
+
 ## Re-audit — 2026 exam profile
 
 - LOCAL_NODE: PASS 31 tests, 583 canonical answer/wrong/empty checks within content tests, original rubric/state regression checks, all twelve direct applied paths, SQL token/literal cases and independent new scheduling/coverage references. Static checker PASS. This is not 583 independent reasoning skills.

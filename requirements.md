@@ -16,6 +16,8 @@
 
 ## Content target and measured re-audit inventory
 
+2026-10-13 maintenance adds six guided study paths, 24 reasoning steps and six explanation checks. Each path connects existing concepts, a verified worked example and a different practice condition; these are not counted as new independent question-bank items. Active mock sessions cannot open the guide's answers. Readable version-1 backups near the compact storage cap must round-trip without discarding records or drafts; invalid or genuinely oversized imports must preserve current data.
+
 At least 60 original concept explanations, at least 16 independently authored code families across C/Java/Python, six SQLite families, eight numeric reasoning families and topic-linked term prompts. Fixed verified variants are counted separately from families. Actual final inventory and native verification report replace any proposed counts before publication.
 
 2026-10-12 re-audit: 134 concepts/term prompts; 23 language-code, 13 SQLite, 15 calculation and 19 scenario families; 583 bounded items. PostgreSQL privilege commands and MySQL routine blanks are explicitly dialect cases, executed in isolated test-only containers. Old IDs/answers/version-1 records remain compatible. Every heading has representative exercises; this is not every possible detailed criterion, exam question or official grading expression.

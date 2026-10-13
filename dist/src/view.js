@@ -35,7 +35,7 @@ export function traceView(question) {
   const back=button('← 이전 단계',()=>{index--;render();},'button subtle'),next=button('다음 단계 →',()=>{index++;render();},'button subtle');
   const root=el('section',{class:'trace-panel','aria-label':'실행 과정'},el('div',{class:'trace-heading'},el('h3',{},'한 단계씩 확인'),position),title,values,result,output,el('div',{class:'row'},back,next));
   function render(){const frame=question.trace[index];title.textContent=frame.label;position.textContent=`${index+1} / ${question.trace.length}`;values.replaceChildren(...Object.entries(frame.values).flatMap(([name,value])=>[el('dt',{},name),el('dd',{},String(value))]));result.replaceChildren(...(frame.table?[tableView(frame.table)]:[]));output.textContent=frame.output?'출력  '+frame.output:'';output.hidden=!frame.output;back.disabled=index===0;next.disabled=index===question.trace.length-1;
-    const highlight=()=>{const scope=root.closest('.result-item')??document.querySelector('.question-card');for(const line of scope?.querySelectorAll('.question-body [data-line]')??[])line.classList.toggle('current-line',Number(line.dataset.line)===frame.line);};
+    const highlight=()=>{const scope=root.closest('.result-item,.guide-example')??document.querySelector('.question-card');for(const line of scope?.querySelectorAll('.question-body [data-line]')??[])line.classList.toggle('current-line',Number(line.dataset.line)===frame.line);};
     highlight();queueMicrotask(highlight);
   }
   render();return root;

@@ -1,6 +1,7 @@
 import { getQuestion } from './questions.js';
 import { grade, scoreSession, CONFIDENCE, CAUSES } from './engine.js';
 export const KEY='engineer-practice-v1', MAX_SIZE=1048576, MAX_ATTEMPTS=2048;
+export const MAX_BACKUP_SIZE=MAX_SIZE*4;
 const exact=(item,keys)=>item&&typeof item==='object'&&!Array.isArray(item)&&Object.keys(item).every(key=>keys.includes(key))&&keys.every(key=>Object.hasOwn(item,key));
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 const date=value=>typeof value==='string'&&value.length===24&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
@@ -25,6 +26,12 @@ export function validateState(value) {
   return value;
 }
 export function parseState(raw){if(raw===null)return emptyState();if(typeof raw!=='string'||raw.length>MAX_SIZE)throw new Error('기록 파일 크기 제한을 초과했습니다.');return validateState(JSON.parse(raw));}
+export function parseBackup(raw){
+  if(typeof raw!=='string'||raw.length>MAX_BACKUP_SIZE)throw new Error('백업 파일 크기 제한을 초과했습니다.');
+  const next=validateState(JSON.parse(raw));
+  if(JSON.stringify(next).length>MAX_SIZE)throw new Error('백업의 기록이 저장 한도를 초과했습니다.');
+  return next;
+}
 export function createStore(storage) {
   let state=emptyState(),available=true,error='';
   try{state=parseState(storage.getItem(KEY));}catch(e){available=false;error='기록을 읽지 못했습니다. 원본은 변경하지 않았습니다.';}
@@ -48,7 +55,7 @@ export function createStore(storage) {
     active(session){return mutate(s=>{s.active=session;});},
     finish(summary,attempts){return mutate(s=>{if(s.sessions.some(item=>item.id===summary.id)||(s.active&&s.active.id!==summary.id))return;s.sessions=[...s.sessions,summary].slice(-20);s.attempts=[...s.attempts,...attempts].slice(-MAX_ATTEMPTS);s.active=null;});},
     export(){return JSON.stringify(state,null,2);},
-    restore(raw){const next=parseState(raw);return persist(structuredClone(next),true);},
+    restore(raw){const next=parseBackup(raw);return persist(structuredClone(next),true);},
     clear(){try{storage.removeItem(KEY);if(storage.getItem(KEY)!==null)throw new Error('delete verification');state=emptyState();available=true;error='';return true;}catch{error='기록을 삭제하지 못했습니다. 브라우저 저장 설정을 확인하세요.';return false;}},
     refresh(){if(!available)return false;try{state=parseState(storage.getItem(KEY));error='';return true;}catch{available=false;error='변경된 기록을 읽지 못했습니다. 원본을 보존했습니다.';return false;}},
   };

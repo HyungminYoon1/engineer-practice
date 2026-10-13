@@ -1,19 +1,20 @@
 import { concepts, getConcept, groups, contentProfile } from './curriculum.js';
 import { allFamilies, itemFamilies, questionCodes, getQuestion, selectCodes, familyChoices, nextFamilyCode } from './questions.js';
 import { grade, shuffled, sessionCodes, scoreSession, conceptStatus, reviewConcepts, domainSummary, remainingSeconds, canEditSession, dailyPlan, nextVariant, DAY } from './engine.js';
-import { createStore, KEY, MAX_SIZE } from './store.js';
+import { createStore, KEY, MAX_BACKUP_SIZE } from './store.js';
 import { coverageTopics, contentInventory, topicInventory } from './coverage.js';
+import { studyGuides, getStudyGuide } from './study-guides.js';
 import { el, button, questionBody, traceView, relatedConcepts, referenceLink, metric, emptyMessage } from './view.js';
 const $=id=>document.getElementById(id), content=$('content');
 const store=createStore({getItem:key=>window.localStorage.getItem(key),setItem:(key,value)=>window.localStorage.setItem(key,value),removeItem:key=>window.localStorage.removeItem(key)});
-const names={home:'오늘 학습',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',scope:'학습 범위',settings:'학습 기록 · 설정'};
-let route='home',selectedConcept='pointers',conceptQuery='',conceptGroup='all';
+const names={home:'오늘 학습',guide:'학습 길잡이',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',scope:'학습 범위',settings:'학습 기록 · 설정'};
+let route='home',selectedGuide='code',selectedConcept='pointers',conceptQuery='',conceptGroup='all';
 let filters={group:'all',language:'all',difficulty:'all',concept:null},practiceCode='C01.0',practice=null,finishedSession=null,timer=0;
 const entropy=()=>crypto.getRandomValues(new Uint32Array(1))[0];
 function notice(message=store.error){$('storage-notice').textContent=message;$('storage-notice').hidden=!message;}
 function saveNotice(saved){notice(saved?'':store.error);}
 function heading(title,description='',actions=null){return el('div',{class:'page-heading'},el('div',{},el('p',{class:'eyebrow'},'INFORMATION PROCESSING / PRACTICAL'),el('h1',{},title),description?el('p',{class:'muted small'},description):null),actions);}
-function go(next){if(!Object.hasOwn(names,next))next='home';if(store.state.active&&['concepts','practice','review','scope'].includes(next))next='exam';route=next;history.replaceState(null,'','#'+next);render();content.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+function go(next){if(!Object.hasOwn(names,next))next='home';if(store.state.active&&['guide','concepts','practice','review','scope'].includes(next))next='exam';route=next;history.replaceState(null,'','#'+next);render();content.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function openConcept(id){if(!getConcept(id))return;selectedConcept=id;conceptQuery='';conceptGroup='all';go('concepts');}
 function openQuestion(code){if(!getQuestion(code))return;practiceCode=code;practice=null;filters={group:'all',language:'all',difficulty:'all',concept:null};go('practice');}
 function formatDate(at){return new Date(at).toLocaleString('ko-KR',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
@@ -32,11 +33,21 @@ function renderHome(){
     el('div',{class:'plan-step'},el('small',{},'02 / UNDERSTAND'),el('strong',{},`개념 ${plan.concept}분`),el('p',{},'규칙·예시·혼동하는 지점을 확인합니다.')),
     el('div',{class:'plan-step'},el('small',{},'03 / APPLY'),el('strong',{},`새 조건 ${plan.practice}분`),el('p',{},'다른 문제에서도 도움 없이 답을 써봅니다.')))),
     el('section',{class:'panel'},el('h3',{},'영역별 풀이'),el('div',{class:'domain-list'},summary.map(g=>el('div',{class:'domain-row'},el('div',{class:'row spread'},el('strong',{},g.name),el('small',{},`${g.unhinted} / ${g.total} 힌트 없이 정답`)),el('meter',{min:0,max:Math.max(1,g.total),value:g.unhinted,'aria-label':g.name+' 정답 기록'})))))));
-  content.append(el('section',{class:'panel section-gap'},el('div',{class:'row spread'},el('div',{},el('h3',{},'어디서 시작할지 모르겠다면'),el('p',{class:'muted small'},'프로그래밍·DB·시스템·개발 이론의 20문항으로 학습 출발점을 확인합니다.')),button('진단평가 시작',()=>startSession('diagnostic'),'button subtle'))));
+  content.append(el('section',{class:'panel section-gap'},el('div',{class:'row spread'},el('div',{},el('h3',{},'어디서 시작할지 모르겠다면'),el('p',{class:'muted small'},'6개 학습 경로에서 풀이 순서와 예제를 익히거나, 20문항 진단평가로 현재 이해도를 확인하세요.')),el('div',{class:'row'},button('학습 길잡이',()=>go('guide')),button('진단평가 시작',()=>startSession('diagnostic'),'button subtle')))));
   const inventory=contentInventory();content.append(el('p',{class:'settings-note'},`${inventory.concepts}개 개념 · 코드 ${inventory.codeFamilies}·SQL ${inventory.sqlFamilies}·계산 ${inventory.calculationFamilies}·사례 ${inventory.scenarioFamilies}유형 · 단답 ${inventory.termItems}개. 총 ${inventory.items}문항은 고정 조건 변형을 포함합니다. 시간 배분은 권장 계획이며 강제 제한이 아닙니다.`),el('div',{class:'scope-warning'},el('p',{},'2026 출제기준의 12개 영역을 개념과 응용 문제로 연습합니다. 전체 기출이나 공식 채점 기준을 재현한 자료는 아닙니다.'),button('학습 범위별 문제 보기',()=>go('scope'),'link-button')));
 }
+function renderGuide(){
+  const guide=getStudyGuide(selectedGuide)??studyGuides[0];
+  content.append(heading('학습 길잡이','풀이 순서 → 예제 확인 → 직접 작성 순서로 연습합니다.'));
+  content.append(chooseSelect('study-guide','학습할 주제',studyGuides.map(item=>[item.id,item.title]),guide.id,value=>{selectedGuide=value;render();}));
+  content.append(el('section',{class:'guide-intro panel section-gap'},el('h2',{},guide.title),el('p',{class:'concept-rule'},guide.goal)));
+  content.append(el('ol',{class:'guide-steps'},guide.steps.map((step,index)=>el('li',{class:'panel'},el('span',{class:'eyebrow'},`STEP ${index+1}`),el('h3',{},step.title),el('p',{},step.text),relatedConcepts(step.concepts,openConcept),button(getQuestion(step.question).title+' 풀기',()=>openQuestion(step.question),'button subtle section-gap')))));
+  const q=getQuestion(guide.example),example=el('details',{class:'panel guide-example'},el('summary',{},'풀이 예제 · '+q.title));
+  example.addEventListener('toggle',()=>{if(!example.open||example.dataset.loaded)return;example.dataset.loaded='true';example.append(questionBody(q),el('h3',{class:'section-gap'},'정답과 근거'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),traceView(q));});
+  content.append(example,el('section',{class:'panel section-gap guide-check'},el('h2',{},'설명할 수 있는지 확인하기'),el('p',{},guide.selfCheck),el('details',{},el('summary',{},'해설 확인'),el('p',{class:'section-gap'},guide.explanation)),el('div',{class:'row section-gap'},button('다른 조건으로 직접 풀기',()=>openQuestion(guide.practice))),referenceLink(guide.reference)));
+}
 function renderConcepts(){
-  content.append(heading('개념 학습','선수 개념 → 핵심 규칙 → 예시 → 문제 풀이로 연결됩니다.'));
+  content.append(heading('개념 학습','선수 개념 → 핵심 규칙 → 예시 → 문제 풀이로 연결됩니다.',button('풀이 순서 보기',()=>go('guide'),'button subtle')));
   const list=el('div',{class:'concept-index'}),article=el('article',{class:'panel concept-article'});
   const search=el('input',{id:'concept-search',type:'search',placeholder:'개념 찾기',value:conceptQuery,maxlength:80,onInput:event=>{conceptQuery=event.target.value;updateList();}});
   content.append(el('div',{class:'filters'},chooseSelect('concept-group','영역',[['all','모든 영역'],...groups.map(g=>[g.id,g.name])],conceptGroup,value=>{conceptGroup=value;updateList();}),el('div',{class:'field'},el('label',{for:'concept-search'},'검색'),search)));
@@ -46,7 +57,7 @@ function renderConcepts(){
   updateList();updateArticle();
 }
 function renderPractice(){
-  content.append(heading('문제 풀이','답안을 먼저 작성한 뒤 정답과 실행 과정을 확인합니다.'));
+  content.append(heading('문제 풀이','답안을 먼저 작성한 뒤 정답과 실행 과정을 확인합니다.',button('학습 길잡이',()=>go('guide'),'button subtle')));
   const values=[['all','모든 형식'],['c','C'],['java','Java'],['python','Python'],['sql','SQL'],['calculation','계산'],['scenario','사례 적용'],['term','개념 단답']];
   const leaveDraft=()=>!practice||practice.graded||!practice.answer.trim()||window.confirm('작성 중인 답안을 버리고 문제를 바꿀까요?');
   const change=(key,value)=>{if(!leaveDraft()){render();return;}filters[key]=value;filters.concept=null;practice=null;render();};
@@ -152,7 +163,7 @@ function renderSettings(){
   const settings=el('section',{class:'panel'},el('h2',{},'학습 계획'),chooseSelect('study-minutes','하루 학습 시간',[['15','15분'],['30','30분'],['60','60분']],store.state.settings.minutes,value=>saveNotice(store.settings({minutes:Number(value)}))));
   const examDate=el('input',{id:'exam-date',type:'date',value:store.state.settings.examDate,onChange:event=>saveNotice(store.settings({examDate:event.target.value}))});settings.append(el('div',{class:'field'},el('label',{for:'exam-date'},'시험 예정일 (선택)'),examDate),el('p',{class:'muted small'},'학습 시간은 오늘 계획의 길이를 선택하는 설정입니다. 복습 주기는 풀이 결과와 경과 시간을 기준으로 정합니다.'));
   const file=el('input',{id:'backup-file',type:'file',accept:'.json,application/json',class:'file-input'}),backup=el('section',{class:'panel'},el('h2',{},'기록 백업'),el('p',{},`최근 ${store.state.attempts.length}개 풀이, ${store.state.bookmarks.length}개 표시 문제, ${store.state.sessions.length}개 시험 기록.`),button('백업 내려받기',()=>downloadBackup(),'button subtle'),el('label',{for:'backup-file',class:'section-gap'},'백업 파일 복원'),file);
-  file.addEventListener('change',async()=>{const picked=file.files?.[0];if(!picked)return;try{if(picked.size>MAX_SIZE*4)throw new Error('백업 파일이 너무 큽니다.');const raw=new TextDecoder('utf-8',{fatal:true}).decode(await picked.arrayBuffer());if(!window.confirm('이 앱의 현재 기록을 백업 파일의 기록으로 바꿀까요? 다른 앱의 기록은 변경하지 않습니다.')){file.value='';return;}const ok=store.restore(raw);finishedSession=null;practice=null;saveNotice(ok);render();tick();}catch{notice('백업 형식이나 저장 상태를 확인하세요. 올바르지 않은 파일은 복원하지 않았습니다.');}finally{file.value='';}});
+  file.addEventListener('change',async()=>{const picked=file.files?.[0];if(!picked)return;try{if(picked.size>MAX_BACKUP_SIZE)throw new Error('백업 파일이 너무 큽니다.');const raw=new TextDecoder('utf-8',{fatal:true}).decode(await picked.arrayBuffer());if(!window.confirm('이 앱의 현재 기록을 백업 파일의 기록으로 바꿀까요? 다른 앱의 기록은 변경하지 않습니다.')){file.value='';return;}const ok=store.restore(raw);finishedSession=null;practice=null;saveNotice(ok);render();tick();}catch{notice('백업 형식이나 저장 상태를 확인하세요. 올바르지 않은 파일은 복원하지 않았습니다.');}finally{file.value='';}});
   backup.append(el('hr',{class:'divider'}),button('이 앱 기록 삭제',()=>{if(!window.confirm('정보처리기사 실기 학습실의 풀이·시험·설정 기록을 모두 삭제할까요? 다른 앱의 데이터는 삭제하지 않습니다.'))return;const ok=store.clear();if(ok){finishedSession=null;practice=null;}saveNotice(ok);render();},'button danger'));
   content.append(el('div',{class:'settings-grid'},settings,backup),el('p',{class:'settings-note'},'풀이 최대 2048개·표시 문제 128개·완료 시험 20개를 보관합니다. 기록 개수 또는 전체 1,048,576자 한도를 넘으면 오래된 풀이부터 제외하며 진행 중 답안은 유지합니다. 동시 탭의 저장은 충돌할 수 있습니다. 같은 GitHub Pages 출처의 다른 앱도 브라우저 저장 공간에 접근할 수 있으므로 공용 기기에서는 사용 후 기록을 삭제하세요. 저장 실패나 손상은 안내하고 원본을 임의로 덮어쓰지 않습니다.'));
   content.append(el('section',{class:'panel section-gap'},el('h3',{},'시험 안내와 제작 범위'),el('p',{class:'small muted'},'공식 실기는 필답형 150분이며 합격기준은 60/100입니다. 이 앱의 문제는 자체 제작 학습 자료이고 영역별 출제 비율·공식 채점표·합격확률을 예측하지 않습니다. 코드·SQL 변형은 배포 전 실제 실행 결과를 검사합니다. 브라우저 안에서는 임의의 사용자 코드를 실행하거나 AI에 답안을 보내지 않습니다.'),referenceLink('exam')));
@@ -168,10 +179,10 @@ function buildPrintSheet(codes,answers){
 function printQuestions(codes,answers){buildPrintSheet(codes,answers);window.print();}
 window.addEventListener('beforeprint',()=>{if(store.state.active)buildPrintSheet(store.state.active.codes,false);});
 function render(){
-  if(store.state.active&&['concepts','practice','review','scope'].includes(route))route='exam';
+  if(store.state.active&&['guide','concepts','practice','review','scope'].includes(route))route='exam';
   content.replaceChildren();$('page-label').textContent=names[route];
   for(const nav of document.querySelectorAll('[data-route]')){if(nav.dataset.route===route)nav.setAttribute('aria-current','page');else nav.removeAttribute('aria-current');}
-  ({home:renderHome,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,scope:renderScope,settings:renderSettings})[route]();notice();updateClock();
+  ({home:renderHome,guide:renderGuide,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,scope:renderScope,settings:renderSettings})[route]();notice();updateClock();
 }
 function updateClock(){const session=store.state.active;const seconds=session?remainingSeconds(session):null;$('session-clock').hidden=seconds===null;if(seconds!==null)$('session-clock').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 function tick(){updateClock();if(store.state.active?.mode==='mock'&&remainingSeconds(store.state.active)===0)finishSession(true);}

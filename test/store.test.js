@@ -42,3 +42,26 @@ test('attempt cap discards oldest only, other keys remain untouched',()=>{
   const storage=memory(),state=emptyState();state.attempts=Array.from({length:MAX_ATTEMPTS},()=>attempt());storage.setItem(KEY,JSON.stringify(state));const store=createStore(storage),old=state.attempts[0].id,last=attempt();store.append(last);
   assert.equal(store.state.attempts.length,MAX_ATTEMPTS);assert.ok(!store.state.attempts.some(a=>a.id===old));assert.equal(store.state.attempts.at(-1).id,last.id);assert.equal(storage.getItem('other-app'),'preserve');
 });
+
+test('a near-capacity readable backup restores every retained record without losing drafts',()=>{
+  const source=memory(),state=emptyState(),now=Date.now();
+  state.attempts=Array.from({length:800},()=>attempt({answer:'가'.repeat(1200),correct:false}));
+  state.bookmarks=['C01.0'];
+  state.active={id:crypto.randomUUID(),mode:'mock',startedAt:new Date(now).toISOString(),deadline:now+9000000,codes:sessionCodes('mock',6),answers:Array(20).fill('작성 중 답안'),flagged:[1],index:1};
+  while(JSON.stringify(state).length>MAX_SIZE)state.attempts.pop();
+  source.setItem(KEY,JSON.stringify(state));const original=createStore(source),backup=original.export();
+  assert.ok(backup.length>MAX_SIZE,'readable formatting must exercise the old restore boundary');
+  const destination=memory(),restored=createStore(destination);
+  assert.equal(restored.restore(backup),true);
+  assert.deepEqual(restored.state,state);
+  assert.ok(destination.getItem(KEY).length<=MAX_SIZE);
+  assert.equal(destination.getItem('other-app'),'preserve');
+});
+
+test('restore rejects excessive formatting and genuinely oversized data before replacing records',()=>{
+  const storage=memory(),store=createStore(storage);store.append(attempt());const before=storage.getItem(KEY),snapshot=structuredClone(store.state);
+  const oversized=emptyState();oversized.attempts=Array.from({length:800},()=>attempt({answer:'x'.repeat(1200),correct:false}));
+  for(const raw of [' '.repeat(MAX_SIZE*4)+JSON.stringify(emptyState()),JSON.stringify(oversized)]){
+    assert.throws(()=>store.restore(raw));assert.equal(storage.getItem(KEY),before);assert.deepEqual(store.state,snapshot);
+  }
+});

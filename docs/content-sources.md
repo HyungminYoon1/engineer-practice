@@ -1,5 +1,11 @@
 # Content coverage and sources — 2026-10-12
 
+## 2026-10-13 guided learning addition
+
+Six original learning paths explain an approach to the existing question families, with 24 steps and six explanation checks. No question IDs, accepted answers or bank counts are changed. Worked examples use the same bank and native-verification gate as practice. The guide differentiates shallow copying from replacing a reference, logical SQL row/group processing, superkeys/normal forms, arrival/completion/waiting times, test independence and parameter binding.
+
+Selected primary references rechecked: Python 3.11 Korean tutorial list copying; SQLite SELECT and COUNT/aggregate documentation; OSTEP scheduling material; OWASP SQL Injection Prevention value binding/allowlist sections; W3C explicit input labels. Database normalization follows the already reviewed Database System Concepts definitions. These references support technical rules, not an official exam distribution or learning-effect estimate. Explanations/examples are original rather than reproduced exam questions.
+
 ## Official exam source
 
 [Q-Net 정보처리기사](https://www.q-net.or.kr/crf005.do?id=crf00503s02&jmCd=1320&jmInfoDivCcd=B0) and [2026 criteria viewer](https://www.q-net.or.kr/pageLink.do?link=cst/cstReport&jmCd=1320&mcrtrNo=991).

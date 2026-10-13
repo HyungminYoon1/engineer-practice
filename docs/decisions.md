@@ -1,5 +1,23 @@
 # Decision log
 
+## D10 — Concept-first guided paths and verified examples (2026-10-13)
+
+- Context: the owner requests learning-content improvements as part of automated maintenance. A large finite catalog alone does not explain how to approach a new problem.
+- Options: inflate item counts with more fixed numbers; external AI tutoring; original reasoning guides connected to the existing verified bank.
+- Decision: add six paths and 24 steps covering value/reference tracing, dependencies/normalization, SQL intermediate rows, scheduling/network calculations, requirements/testing and security/integration. Each includes an explanation check, an existing worked example and a different-condition practice link. Counts remain 134 concepts/583 items/70 applied families. Viewing guidance does not create performance records. The active-exam guard also covers the new route.
+- Rationale: explain how to reason and verify, preserve existing answers/IDs/backup schema, and avoid claiming a pass prediction or adding runtime services.
+- Affected: study-guides.js, app/view/index/styles, content-link integrity test, README/requirements/architecture/source notes and gallery metadata/capture.
+- Review: all six paths/examples and typed practice, trace next/previous highlighting, active mock answer isolation, 320px/desktop layout. Primary source sections are selected, not entire manuals; existing bank native verification remains required before release.
+
+## D09 — Readable backup round-trip at the storage limit (2026-10-13)
+
+- Context: automated maintenance is approved. A valid near-capacity record is exported with indentation, then rejected by the old restore parser because formatting pushes the file over the storage limit.
+- Options: remove readable formatting from future exports only; increase retained data capacity; accept bounded formatting and validate the canonical record before replacement.
+- Decision: keep version 1, readable export, all record caps and the 1,048,576-character compact storage cap. Restore accepts at most 4,194,304 input characters (the browser also limits the file to that many bytes), then requires the validated compact JSON to fit the original storage cap. Oversized actual data is rejected before replacement; import never silently trims a backup.
+- Rationale: existing readable backups remain recoverable without increasing retained data or changing the storage schema. Input is bounded before parsing and schema/grade validation remains mandatory.
+- Affected: store.js, app.js, store regression tests and storage documentation.
+- Review: red-first reproduction with near-capacity Korean answers, bookmarks and an active draft; full state equality after restore; excessive formatting and genuinely oversized records preserve existing storage and unrelated keys.
+
 ## D08 — 미수록 주제의 응용 문제화와 DBMS 실행 검증 (2026-10-12)
 
 - Context: 사용자가 미수록 안내에 머물지 말고 실제 답안 연습을 추가하도록 요구하고 서술형 여부를 질문했습니다. 대상은 2026입니다.
