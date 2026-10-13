@@ -1,5 +1,9 @@
 # Verification — 2026-10-12
 
+## 2026-10-13 — systematic edge-case audit
+
+See [edge-cases-20261013.md](edge-cases-20261013.md) for new RED/GREEN evidence, 46 Node tests, 20 browser checks, 279 native + 15 dialect executions, source boundaries and NOT_RUN. Release evidence is separate in the linked WEB LAB integration report; historical results below are not counted as new coverage.
+
 ## 2026-10-13 — backup roundtrip and guided learning / LOCAL
 
 - SOURCE VERIFIED: architecture, requirements, README, decisions, content sources, application/view/storage/engine and relevant bank, regression/native/dialect/check paths. Repository as a whole is PARTIAL: no independent new review of every historical question and every third-party runtime.

@@ -1,5 +1,14 @@
 # Decision log
 
+## D11 — Strict SQL literals, compatible history and stale-input rejection (2026-10-13)
+
+- Context: the approved systematic audit reproduced SQL compatibility-normalization false positives, abandoned/deleted exam resurrection, late backup dialogs and out-of-contract dates.
+- Options: migrate/overwrite prior grades; reject all historical backups affected by a correction; preserve bounded version1 history and grade new answers correctly.
+- Decision: preserve quoted SQL code points for new token answers. Validation accepts a recorded outcome only if the current or former documented SQL normalization reproduces it. Preserve raw answers/scores; when a viewed old exam differs, state stored score versus current review score. No schema, IDs, retention or bank changes. A completed result requires its still-active ID; rejected stale completion does not recreate a deleted key. File callbacks require the current connected input and selected file. Date UI matches existing 2000–2099 storage contract.
+- Rationale: correct future learning without making existing valid records unreadable or undoing explicit deletion. Compatibility does not loosen new-answer grading. Fresh reads are not atomic multi-tab transactions.
+- Affected: engine/store/app, edge tests/browser harness, architecture grading note and audit report.
+- Review: executed failing tests first, historical backup exact roundtrip, current SQL SQLite comparison, same browser regression cases, full Node/static/native/dialect verification before release.
+
 ## D10 — Concept-first guided paths and verified examples (2026-10-13)
 
 - Context: the owner requests learning-content improvements as part of automated maintenance. A large finite catalog alone does not explain how to approach a new problem.

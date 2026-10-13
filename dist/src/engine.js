@@ -11,7 +11,7 @@ function sqlTokens(text){
 }
 export function grade(question, answer) {
   if (!question || typeof answer!=='string' || answer.length>1200) return {correct:false,empty:true};
-  const clean=answer.normalize('NFKC').replace(/\r\n?/g,'\n').trim();if(!clean)return {correct:false,empty:true};
+  const clean=question.kind==='tokens'?answer.trim():answer.normalize('NFKC').replace(/\r\n?/g,'\n').trim();if(!clean)return {correct:false,empty:true};
   let correct=false;
   if(question.kind==='tokens'){
     const tokens=sqlTokens(clean);correct=tokens!==null&&(question.aliases??[question.expected]).some(value=>sqlTokens(value)===tokens);
