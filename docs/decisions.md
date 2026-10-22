@@ -1,5 +1,15 @@
 # Decision log
 
+## D12 — Answer-cue removal and exact Java identifiers (2026-10-22)
+
+- Context: owner requests evaluation and correction of a review against 905e34b. Reproduction confirms 79 of 134 term titles contain the primary answer, question/print views show titles before submission, and all five X11 JDBC conditions accept `setstring` as `setString`.
+- Options: rename concepts/questions and break navigation/history; hide only the diagnostic heading; enforce a presentation boundary across question cards/print and an explicit code-identifier rubric. Choose the last option, preserving concept metadata and original question IDs/expected answers.
+- Decision: hide titles, concept/reference links and internal question codes before an answer is submitted; reveal them in submitted feedback/review and explicit learning examples. Use neutral term-family picker labels; retain deliberate applied-family selection and concept learning. Printed questions show numbers/prompts/source only; answer sheets retain titles/codes. This does not conceal the downloadable static answer bank.
+- Grading/history: X11 uses exact identifier matching after outer whitespace trimming, with no case folding, punctuation deletion or compatibility normalization. General term aliases remain unchanged. Preserve historical X11 grades under the former term rubric, including intermediate strict-SQL and older compatibility-SQL session totals. Do not mutate stored grades, IDs, v1 schema, caps or other apps' keys; current review explains differences.
+- Rationale: remove unintended retrieval cues and invalid Java acceptance while keeping old backups and study navigation useful. The change is within the existing answer-first/static/local architecture. No provider, account, server or cost is introduced.
+- Affected: app/view/engine/store/casebook, regression tests, native JDBC compiler checks, browser verifier, architecture/requirements/README/verification; WEB LAB receives only the updated actual app screenshot and its verification note.
+- Review: failing Node and browser checks precede product changes; verify both session modes, print, reload, feedback, wrong-case/Unicode identifiers, all canonical answers and historical backups. Native Java compilation is an additional independent check. Physical devices, every browser and official examination grading remain outside this targeted repair.
+
 ## D11 — Strict SQL literals, compatible history and stale-input rejection (2026-10-13)
 
 - Context: the approved systematic audit reproduced SQL compatibility-normalization false positives, abandoned/deleted exam resurrection, late backup dialogs and out-of-contract dates.

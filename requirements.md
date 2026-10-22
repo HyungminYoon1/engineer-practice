@@ -16,6 +16,8 @@
 
 ## Content target and measured re-audit inventory
 
+2026-10-22 correction: titles, related concepts, references and internal question codes must not cue answers in unsubmitted question cards or printed question sheets. Explicit learning examples and submitted reviews may reveal them. Java identifier blanks require exact case and code points, while ordinary term aliases retain their formatting tolerance. Existing version-1 grades/backups remain readable and stored/current score differences are explained.
+
 2026-10-13 maintenance adds six guided study paths, 24 reasoning steps and six explanation checks. Each path connects existing concepts, a verified worked example and a different practice condition; these are not counted as new independent question-bank items. Active mock sessions cannot open the guide's answers. Readable version-1 backups near the compact storage cap must round-trip without discarding records or drafts; invalid or genuinely oversized imports must preserve current data.
 
 At least 60 original concept explanations, at least 16 independently authored code families across C/Java/Python, six SQLite families, eight numeric reasoning families and topic-linked term prompts. Fixed verified variants are counted separately from families. Actual final inventory and native verification report replace any proposed counts before publication.

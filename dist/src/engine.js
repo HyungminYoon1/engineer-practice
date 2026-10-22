@@ -11,14 +11,15 @@ function sqlTokens(text){
 }
 export function grade(question, answer) {
   if (!question || typeof answer!=='string' || answer.length>1200) return {correct:false,empty:true};
-  const clean=question.kind==='tokens'?answer.trim():answer.normalize('NFKC').replace(/\r\n?/g,'\n').trim();if(!clean)return {correct:false,empty:true};
+  const clean=['tokens','identifier'].includes(question.kind)?answer.trim():answer.normalize('NFKC').replace(/\r\n?/g,'\n').trim();if(!clean)return {correct:false,empty:true};
   let correct=false;
   if(question.kind==='tokens'){
     const tokens=sqlTokens(clean);correct=tokens!==null&&(question.aliases??[question.expected]).some(value=>sqlTokens(value)===tokens);
   }else if(question.kind==='term'){
     const normalize=text=>text.normalize('NFKC').toLowerCase().replace(/[\s-]+/g,'');
     correct=(question.aliases??[question.expected]).some(value=>normalize(value)===normalize(clean));
-  }else if(question.kind==='number') correct=/^[+-]?\d+(?:\.0+)?$/.test(clean)&&Number.isFinite(Number(clean))&&Number(clean)===Number(question.expected);
+  }else if(question.kind==='identifier') correct=(question.aliases??[question.expected]).includes(clean);
+  else if(question.kind==='number') correct=/^[+-]?\d+(?:\.0+)?$/.test(clean)&&Number.isFinite(Number(clean))&&Number(clean)===Number(question.expected);
   else if(question.kind==='table'){
     const normalize=text=>text.trim().split('\n').map(line=>line.split('|').map(cell=>cell.trim()).join('|')).join('\n');
     correct=normalize(clean)===normalize(question.expected);

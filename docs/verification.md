@@ -1,5 +1,17 @@
 # Verification — 2026-10-12
 
+## 2026-10-22 — answer disclosure and Java grading / LOCAL
+
+- SOURCE VERIFIED: review-linked questions.js title/ID generation, view.js and engine.js at exact baseline 905e34b6519c5428b8c0204c51d2fbc8f1d1772e; architecture/requirements/README, relevant D11/D04 policy, app/store/X11 builder, native verifier/workflow and affected regression paths. PARTIAL: unaffected question-family content and historical audit documents; this is not a new academic audit of all 583 items.
+- REPRODUCED: 79/134 term titles contain their exact primary answer. Active diagnostic/mock question titles, practice related-concept links and print headings disclose cues. X11.0–4 use term normalization, accepting wrong-case and altered identifiers.
+- RED: new six-test grading/history file fails three assertions before product changes; isolated actual Chrome verifier fails all eight scenarios on the old views/grading. Raw browser report: output/playwright/grading-20261022/red/report.json. These are two product defects, not eight independent bugs.
+- GREEN: full Node 52/52 and static check PASS; all 583 canonical answers pass. Java case/internal whitespace/punctuation/Unicode rejection and ordinary aliases, historical SQL/JDBC reads/exports/restores, new wrong-case records and impossible historical scores are covered.
+- BROWSER_LOCAL: 8/8 isolated Chrome scenarios PASS: both session modes hide metadata, retain drafts across reload and print without cue headings; submission reveals concepts/explanations and scores `setstring` as wrong; practice gating/format help, historical score explanation and 320px root overflow. No page errors. Native details toggle requires an explicit content wait in the harness; correcting that wait is not counted as an application defect.
+- DATA: synthetic fresh contexts only. Existing user records, IDs, keys, schema/caps and other-app data are preserved. Historical totals remain stored; current review can differ. No runtime dependency or cloud configuration changes.
+- LOCAL_NATIVE: all 279 existing C72/Java56/Python56/SQLite95 output variants execute and match; five JDBC completed snippets compile under Java release 17 and all five `setstring` replacements fail compilation as required. Those expected compiler rejections are successful negative checks. PostgreSQL DCL5 and MySQL procedure5/function5 also PASS; owned offline test containers are removed.
+- RETAINED_BROWSER: the prior four historical-grade/stale-submit/late-import/calendar checks and 16 ordinary learning/session/backup/responsive checks PASS. These are separate from the eight new disclosure/grading scenarios. Native/dialect verification and browser tests do not execute learner-submitted code.
+- NOT_RUN in this targeted browser suite: real printer/PDF pagination, physical mobile devices, alternate browser engines, complete human solving of every item, and official examiner grading. Native/dialect, CI/live and gallery evidence are recorded after their respective runs below.
+
 ## 2026-10-13 — systematic edge-case audit
 
 See [edge-cases-20261013.md](edge-cases-20261013.md) for new RED/GREEN evidence, 46 Node tests, 20 browser checks, 279 native + 15 dialect executions, source boundaries and NOT_RUN. Release evidence is separate in the linked WEB LAB integration report; historical results below are not counted as new coverage.

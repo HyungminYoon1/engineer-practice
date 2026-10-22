@@ -82,7 +82,7 @@ add('X10','성능 측정에서 병목 찾기','dev','scenario',['performance-tes
 });
 add('X11','취약 SQL 코드의 바인딩 수정','dev','scenario',['secure-binding','injection'],v=>{
   const names=['user_name','email','code','city','tag'],column=names[v];
-  return scenario('아래 JDBC 코드에서 사용자 입력을 SQL 문장에 연결하지 않고 ? 값으로 바인딩하려 합니다. 문자열 값을 전달할 메서드 이름 한 개를 빈칸에 쓰세요.','setString','PreparedStatement는 SQL 구조를 고정하고 입력을 값으로 전달합니다. 인증·인가와 다른 입력 검증도 별도로 필요합니다.',{dialect:'Java JDBC (발췌)',code:`PreparedStatement ps = conn.prepareStatement(\n  "SELECT id FROM users WHERE ${column} = ?");\nps.___(1, input);`,aliases:['setString']});
+  return scenario('아래 JDBC 코드에서 사용자 입력을 SQL 문장에 연결하지 않고 ? 값으로 바인딩하려 합니다. 문자열 값을 전달할 메서드 이름 한 개를 빈칸에 쓰세요.','setString','PreparedStatement는 SQL 구조를 고정하고 입력을 값으로 전달합니다. Java 메서드명은 대소문자를 구분하므로 setstring은 setString과 다른 이름입니다. 인증·인가와 다른 입력 검증도 별도로 필요합니다.',{kind:'identifier',dialect:'Java JDBC (발췌)',code:`PreparedStatement ps = conn.prepareStatement(\n  "SELECT id FROM users WHERE ${column} = ?");\nps.___(1, input);`,aliases:['setString']});
 });
 add('X12','보안 사례에서 취약점 구별','dev','scenario',['ssrf','path-traversal','xxe','csrf','dos'],v=>{
   const cases=[['서버가 사용자가 입력한 URL의 문서를 대신 가져오는데, 내부 관리 서버 주소로도 요청할 수 있습니다.','SSRF','요청의 주체가 서버이며 목적지가 공격자의 입력에 의해 선택됩니다.',['SSRF']],['다운로드 파일명을 외부에서 받고 정규화된 경계를 검사하지 않아 상위 폴더의 파일이 열립니다.','경로 탐색','파일 경로를 통해 허용된 저장소 밖으로 접근합니다.',['경로 탐색','path traversal','디렉터리 트래버설']],['XML 파서가 외부 개체를 해석하여 공격자가 지정한 로컬 파일 내용을 응답에 포함합니다.','XXE','외부 개체 처리가 불필요하면 비활성화하고 안전한 파서를 사용합니다.',['XXE']],['로그인 세션 쿠키를 가진 브라우저가 외부 사이트의 요청으로 의도하지 않은 계정 변경을 수행합니다.','CSRF','인증된 브라우저의 원하지 않는 상태 변경 요청입니다.',['CSRF']],['비싼 계산 요청을 반복하여 작업 큐를 고갈시키고 정상 사용자의 처리를 막습니다.','DoS','입력 형식이 유효해도 요청량과 처리 비용 제한이 필요합니다.',['DoS','서비스 거부']]][v];

@@ -15,17 +15,17 @@ export const button=(label,handler,className='button',attrs={})=>el('button',{ty
 export function tableView(table) {
   return el('div',{class:'table-scroll'},el('table',{},el('caption',{},table.name??'결과표'),el('thead',{},el('tr',{},table.headers.map(h=>el('th',{scope:'col'},h)))),el('tbody',{},table.rows.length?table.rows.map(row=>el('tr',{},row.map(value=>el('td',{},value===null?'NULL':String(value))))):el('tr',{},el('td',{colspan:table.headers.length},'결과 없음')))));
 }
-export function sourceView(question) {
+export function sourceView(question,{showCode=true}={}) {
   if(!question.sourceCode)return null;
-  return el('div',{class:'source-panel'},el('div',{class:'source-heading'},el('span',{},question.dialect??{c:'C11',java:'Java',python:'Python 3'}[question.language]??question.language),el('span',{},question.code)),el('ol',{class:'code-lines',tabindex:'0','aria-label':'문제 코드'},question.sourceCode.split('\n').map((line,i)=>el('li',{'data-line':i+1},el('code',{},line||' ')))));
+  return el('div',{class:'source-panel'},el('div',{class:'source-heading'},el('span',{},question.dialect??{c:'C11',java:'Java',python:'Python 3'}[question.language]??question.language),showCode?el('span',{},question.code):null),el('ol',{class:'code-lines',tabindex:'0','aria-label':'문제 코드'},question.sourceCode.split('\n').map((line,i)=>el('li',{'data-line':i+1},el('code',{},line||' ')))));
 }
-export function questionBody(question,{showTitle=true}={}) {
+export function questionBody(question,{showTitle=false}={}) {
   const fragment=el('div',{class:'question-body'});
   if(showTitle)fragment.append(el('h2',{},question.title));
   fragment.append(el('p',{class:'question-prompt'},question.prompt));
   if(question.tables)fragment.append(el('div',{class:'fixture-tables'},question.tables.map(tableView)));
-  const source=sourceView(question);if(source)fragment.append(source);
-  if(question.reference)fragment.append(referenceLink(question.reference));
+  const source=sourceView(question,{showCode:showTitle});if(source)fragment.append(source);
+  if(showTitle&&question.reference)fragment.append(referenceLink(question.reference));
   return fragment;
 }
 export function traceView(question) {

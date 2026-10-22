@@ -43,7 +43,7 @@ function renderGuide(){
   content.append(el('section',{class:'guide-intro panel section-gap'},el('h2',{},guide.title),el('p',{class:'concept-rule'},guide.goal)));
   content.append(el('ol',{class:'guide-steps'},guide.steps.map((step,index)=>el('li',{class:'panel'},el('span',{class:'eyebrow'},`STEP ${index+1}`),el('h3',{},step.title),el('p',{},step.text),relatedConcepts(step.concepts,openConcept),button(getQuestion(step.question).title+' 풀기',()=>openQuestion(step.question),'button subtle section-gap')))));
   const q=getQuestion(guide.example),example=el('details',{class:'panel guide-example'},el('summary',{},'풀이 예제 · '+q.title));
-  example.addEventListener('toggle',()=>{if(!example.open||example.dataset.loaded)return;example.dataset.loaded='true';example.append(questionBody(q),el('h3',{class:'section-gap'},'정답과 근거'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),traceView(q));});
+  example.addEventListener('toggle',()=>{if(!example.open||example.dataset.loaded)return;example.dataset.loaded='true';example.append(questionBody(q,{showTitle:true}),el('h3',{class:'section-gap'},'정답과 근거'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),traceView(q));});
   content.append(example,el('section',{class:'panel section-gap guide-check'},el('h2',{},'설명할 수 있는지 확인하기'),el('p',{},guide.selfCheck),el('details',{},el('summary',{},'해설 확인'),el('p',{class:'section-gap'},guide.explanation)),el('div',{class:'row section-gap'},button('다른 조건으로 직접 풀기',()=>openQuestion(guide.practice))),referenceLink(guide.reference)));
 }
 function renderConcepts(){
@@ -68,15 +68,15 @@ function renderPractice(){
   const q=getQuestion(practiceCode);
   const choices=familyChoices(codes),currentChoice=choices.find(item=>item.id===q.family);
   const switchQuestion=code=>{if(code===practiceCode)return;if(!leaveDraft()){render();return;}practiceCode=code;practice=null;render();};
-  content.append(el('div',{class:'question-picker'},chooseSelect('practice-family','풀이 유형',choices.map(item=>[item.id,item.title]),q.family,value=>switchQuestion(choices.find(item=>item.id===value).codes[0])),chooseSelect('practice-variant','조건 선택',currentChoice.codes.map(code=>[code,`조건 ${getQuestion(code).variant+1} / ${currentChoice.codes.length}`]),q.code,switchQuestion),button('다른 유형',()=>switchQuestion(nextFamilyCode(q.code,codes)),'button subtle',{disabled:choices.length<2})));
+  content.append(el('div',{class:'question-picker'},chooseSelect('practice-family','풀이 유형',choices.map((item,index)=>[item.id,item.language==='term'?`개념 단답 ${String(index+1).padStart(3,'0')}`:item.title]),q.family,value=>switchQuestion(choices.find(item=>item.id===value).codes[0])),chooseSelect('practice-variant','조건 선택',currentChoice.codes.map(code=>[code,`조건 ${getQuestion(code).variant+1} / ${currentChoice.codes.length}`]),q.code,switchQuestion),button('다른 유형',()=>switchQuestion(nextFamilyCode(q.code,codes)),'button subtle',{disabled:choices.length<2})));
   if(!practice||practice.code!==q.code)practice={code:q.code,answer:'',hinted:false,confidence:'unsure',started:performance.now(),graded:false,composing:false,attemptId:null};
   const ctx=practice,card=el('section',{class:'panel question-card'}),answerPanel=el('aside',{class:'panel answer-panel'});
-  card.append(el('div',{class:'question-meta'},el('div',{class:'row'},chip(q.group),el('span',{}, {1:'기초',2:'표준',3:'응용'}[q.difficulty])),el('span',{class:'mono'},q.code+' · 자체 제작')),questionBody(q));
+  card.append(el('div',{class:'question-meta'},el('div',{class:'row'},chip(q.group),el('span',{}, {1:'기초',2:'표준',3:'응용'}[q.difficulty])),el('span',{class:'mono question-id'},ctx.graded?q.code+' · 자체 제작':'자체 제작')),questionBody(q,{showTitle:ctx.graded}));
   const bookmark=button(store.state.bookmarks.includes(q.code)?'표시 해제':'문제 표시',()=>{saveNotice(store.bookmark(q.code));bookmark.textContent=store.state.bookmarks.includes(q.code)?'표시 해제':'문제 표시';},'link-button');
-  card.append(el('div',{class:'row spread'},relatedConcepts(q.conceptIds,openConcept),bookmark));
+  card.append(el('div',{class:'row spread'},bookmark));
   const form=el('form',{}),input=el('textarea',{id:'practice-answer',rows:q.kind==='tokens'?6:q.kind==='table'?5:3,maxlength:1200,value:ctx.answer,disabled:ctx.graded,'aria-describedby':'answer-help',spellcheck:'false'});
   input.addEventListener('input',()=>{ctx.answer=input.value;});input.addEventListener('compositionstart',()=>{ctx.composing=true;});input.addEventListener('compositionend',()=>{ctx.composing=false;ctx.answer=input.value;});
-  const help={term:'허용 표기 목록으로 확인합니다. 영문 대소문자·공백 차이는 허용합니다.',number:'문제에서 요구한 단위의 정수를 입력하세요.',table:'각 행은 줄바꿈, 각 열은 |로 구분하세요. 예: 1|2|3',tokens:'문제에서 지정한 문장 형태를 사용하세요. 키워드 대소문자·줄바꿈·공백은 허용하지만 문자열 안의 값은 그대로 구분합니다.',output:'출력의 대소문자와 내부 공백을 그대로 입력하세요.'}[q.kind];
+  const help={term:'허용 표기 목록으로 확인합니다. 영문 대소문자·공백 차이는 허용합니다.',identifier:'코드의 이름 한 개를 대소문자까지 정확히 입력하세요. 앞뒤 공백만 허용합니다.',number:'문제에서 요구한 단위의 정수를 입력하세요.',table:'각 행은 줄바꿈, 각 열은 |로 구분하세요. 예: 1|2|3',tokens:'문제에서 지정한 문장 형태를 사용하세요. 키워드 대소문자·줄바꿈·공백은 허용하지만 문자열 안의 값은 그대로 구분합니다.',output:'출력의 대소문자와 내부 공백을 그대로 입력하세요.'}[q.kind];
   const confidence=chooseSelect('practice-confidence','답에 대한 확신',[['guess','추측했어요'],['unsure','조금 헷갈려요'],['sure','확신해요']],ctx.confidence,value=>{ctx.confidence=value;});
   const submit=el('button',{type:'submit',class:'button answer-submit',disabled:ctx.graded},'정답 확인');
   const feedback=el('div',{}),hintBox=el('div',{class:'hint-box',hidden:!ctx.hinted},q.hint),hintButton=button('힌트 보기',()=>{if(ctx.graded)return;ctx.hinted=true;hintBox.hidden=false;hintButton.disabled=true;},'link-button hint-button',{disabled:ctx.graded||ctx.hinted});
@@ -86,7 +86,7 @@ function renderPractice(){
     const record={id:ctx.attemptId,code:q.code,answer:ctx.answer,correct:result.correct,hinted:ctx.hinted,confidence:ctx.confidence,elapsed:Math.min(86400000,Math.max(0,Math.round(performance.now()-ctx.started))),at:new Date().toISOString(),cause:'none'};
     saveNotice(store.append(record));input.disabled=true;submit.disabled=true;hintButton.disabled=true;confidence.querySelector('select').disabled=true;renderFeedback();
   });
-  function renderFeedback(){feedback.replaceChildren();if(!ctx.graded)return;const result=ctx.result??grade(q,ctx.answer);const panel=el('section',{class:'feedback '+(result.correct?'hit':'miss'),role:'status'},el('h3',{},result.correct?'✓ 정답':'다시 확인해보세요'),el('p',{class:'small muted'},ctx.hinted?'힌트를 사용한 풀이로 기록했습니다.':'힌트 없이 작성한 풀이입니다.'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation));
+  function renderFeedback(){feedback.replaceChildren();if(!ctx.graded)return;card.querySelector('.question-body').replaceWith(questionBody(q,{showTitle:true}));card.querySelector('.question-id').textContent=q.code+' · 자체 제작';const result=ctx.result??grade(q,ctx.answer);const panel=el('section',{class:'feedback '+(result.correct?'hit':'miss'),role:'status'},el('h3',{},result.correct?'✓ 정답':'다시 확인해보세요'),el('p',{class:'small muted'},ctx.hinted?'힌트를 사용한 풀이로 기록했습니다.':'힌트 없이 작성한 풀이입니다.'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),relatedConcepts(q.conceptIds,openConcept));
     if(!result.correct)panel.append(chooseSelect('error-cause','틀린 이유',[['none','아직 분류하지 않음'],['concept','개념을 몰랐어요'],['trace','실행 순서를 놓쳤어요'],['calculation','계산 실수'],['term','용어를 혼동했어요'],['format','답안 형식이 달랐어요']],store.state.attempts.find(a=>a.id===ctx.attemptId)?.cause??'none',cause=>saveNotice(store.classify(ctx.attemptId,cause))));
     panel.append(traceView(q),el('div',{class:'row section-gap'},button(nextVariant(q.code)===q.code?'다른 문제 풀기':'다른 조건으로 풀기',()=>{practiceCode=nextVariant(q.code)===q.code?shuffled(codes.filter(code=>code!==q.code),entropy())[0]??q.code:nextVariant(q.code);practice=null;render();window.scrollTo({top:0,behavior:'instant'});},'button subtle'),button('문제지 인쇄',()=>printQuestions([q.code],false),'link-button')));feedback.append(panel);
   }
@@ -136,7 +136,7 @@ function sessionRows(){return el('div',{class:'session-list'},[...store.state.se
 function renderActive(session){
   const q=getQuestion(session.codes[session.index]),answered=session.answers.filter(a=>a.trim()).length;
   content.append(heading(session.mode==='mock'?'모의시험 진행 중':'진단평가 진행 중',`문항 ${session.index+1} / 20 · 답안 작성 ${answered} / 20`));
-  const card=el('section',{class:'panel question-card'},el('div',{class:'question-meta'},chip(q.group),el('span',{class:'mono'},`문항 ${session.index+1} · ${q.code}`)),questionBody(q)),aside=el('aside',{class:'panel answer-panel'});
+  const card=el('section',{class:'panel question-card'},el('div',{class:'question-meta'},chip(q.group),el('span',{class:'mono'},`문항 ${session.index+1}`)),questionBody(q)),aside=el('aside',{class:'panel answer-panel'});
   const input=el('textarea',{id:'exam-answer',rows:5,maxlength:1200,value:session.answers[session.index],spellcheck:'false'}),saved=el('p',{class:'answer-help'},'답안은 입력할 때 자동 저장됩니다. 제출 전에는 채점하지 않습니다.');
   const editable=()=>{const current=store.state.active;if(!current||current.id!==session.id)return false;if(!canEditSession(current)){finishSession(true);return false;}return true;};
   input.addEventListener('input',()=>{if(!editable())return;const current=store.state.active;const next=structuredClone(current);next.answers[session.index]=input.value;const ok=store.active(next);saved.textContent=ok?'답안 저장됨':'화면에만 유지 · 저장 상태를 확인하세요.';saveNotice(ok);updateMap();});
@@ -150,12 +150,12 @@ function renderActive(session){
 function renderResult(session){
   const result=scoreSession(session),stats=groups.map(g=>{const items=result.items.filter(item=>getQuestion(item.code).group===g.id);return {...g,count:items.length,correct:items.filter(item=>item.correct).length};});
   content.append(heading(session.mode==='mock'?'모의시험 결과':'진단평가 결과',`${formatDate(session.endedAt)} · 학습용 모의점수`,el('div',{class:'row'},button('새 시험 선택',()=>{finishedSession=null;render();},'button subtle'),button('문제지 인쇄',()=>printQuestions(session.codes,false),'button subtle'),button('해설지 인쇄',()=>printQuestions(session.codes,true),'button subtle'))));
-  if(session.score!==result.score)content.append(el('p',{class:'grading-update muted'},`저장된 점수 ${session.score}점 · 현재 채점 기준 ${result.score}점. SQL 문자열 채점이 수정되어 차이가 생겼습니다. 원래 기록은 유지하며 아래 해설에는 현재 기준을 적용합니다.`));
+  if(session.score!==result.score)content.append(el('p',{class:'grading-update muted'},`저장된 점수 ${session.score}점 · 현재 채점 기준 ${result.score}점. SQL 문자열·Java 메서드명 채점이 수정되어 차이가 생겼습니다. 원래 기록은 유지하며 아래 해설에는 현재 기준을 적용합니다.`));
   content.append(el('section',{class:'panel'},el('div',{class:'row spread'},el('div',{},el('strong',{class:'exam-result-score'},String(result.score)),el('span',{class:'muted'},' / 100')),el('p',{class:'muted'},`${result.correct}/20 정답 · 미응답 ${result.unanswered}개 · 실제 시험 합격·공식 부분점수 판정은 아닙니다.`)),el('div',{class:'metrics'},stats.map(g=>metric(g.name,`${g.correct} / ${g.count}`)))));
   content.append(el('h2',{class:'section-gap'},'문항별 확인'));
   for(const [i,item]of result.items.entries()){
     const q=getQuestion(item.code),detail=el('details',{class:'result-item'},el('summary',{},`${String(i+1).padStart(2,'0')} · ${item.empty?'미응답':item.correct?'정답':'오답'} · ${q.title}`));
-    detail.addEventListener('toggle',()=>{if(!detail.open||detail.dataset.loaded)return;detail.dataset.loaded='true';detail.append(questionBody(q),el('p',{class:'small muted'},'작성한 답안'),el('pre',{class:'expected-answer'},item.answer||'미응답'),el('p',{class:'small muted'},'정답'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),traceView(q),relatedConcepts(q.conceptIds,openConcept),button('이 문제 다시 풀기',()=>openQuestion(q.code),'link-button'));});content.append(detail);
+    detail.addEventListener('toggle',()=>{if(!detail.open||detail.dataset.loaded)return;detail.dataset.loaded='true';detail.append(questionBody(q,{showTitle:true}),el('p',{class:'small muted'},'작성한 답안'),el('pre',{class:'expected-answer'},item.answer||'미응답'),el('p',{class:'small muted'},'정답'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),traceView(q),relatedConcepts(q.conceptIds,openConcept),button('이 문제 다시 풀기',()=>openQuestion(q.code),'link-button'));});content.append(detail);
   }
 }
 function renderSettings(){
@@ -173,8 +173,8 @@ function renderSettings(){
 function downloadBackup(){const url=URL.createObjectURL(new Blob([store.export()],{type:'application/json;charset=utf-8'})),a=el('a',{href:url,download:'engineer-practice-backup.json'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function buildPrintSheet(codes,answers){
   if(answers&&store.state.active)return;
-  const sheet=el('div',{class:'print-sheet'},el('h1',{},answers?'정보처리기사 실기 학습실 · 정답과 해설':'정보처리기사 실기 학습실 · 문제지'),el('p',{class:'small'},'2026 대비 자체 제작 · '+codes.length+'문항 · 문제 코드로 조건을 다시 찾을 수 있습니다.'));
-  for(const [i,code]of codes.entries()){const q=getQuestion(code),section=el('article',{class:'print-item'},el('h3',{},`${i+1}. ${q.title} / ${code}`));if(answers)section.append(el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation));else section.append(questionBody(q,{showTitle:false}),el('div',{class:'write-lines','aria-label':'답안 작성 공간'}));sheet.append(section);}
+  const sheet=el('div',{class:'print-sheet'},el('h1',{},answers?'정보처리기사 실기 학습실 · 정답과 해설':'정보처리기사 실기 학습실 · 문제지'),el('p',{class:'small'},'2026 대비 자체 제작 · '+codes.length+'문항'));
+  for(const [i,code]of codes.entries()){const q=getQuestion(code),section=el('article',{class:'print-item'},el('h3',{},answers?`${i+1}. ${q.title} / ${code}`:`${i+1}. 문제`));if(answers)section.append(el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation));else section.append(questionBody(q,{showTitle:false}),el('div',{class:'write-lines','aria-label':'답안 작성 공간'}));sheet.append(section);}
   $('print-area').replaceChildren(sheet);
 }
 function printQuestions(codes,answers){buildPrintSheet(codes,answers);window.print();}

@@ -7,11 +7,11 @@ const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3
 const date=value=>typeof value==='string'&&value.length===24&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString()===value;
 const calendarDate=value=>typeof value==='string'&&/^20\d\d-\d\d-\d\d$/.test(value)&&Number.isFinite(Date.parse(value))&&new Date(value).toISOString().slice(0,10)===value;
 const answer=value=>typeof value==='string'&&value.length<=1200;
-// Version-1 backups may contain grades from the former SQL NFKC rubric.
+// Version-1 backups may contain former SQL NFKC or X11 term-rubric grades.
 // Preserve historical outcomes; only new submissions use the corrected rubric.
-const formerGrade=(q,value)=>grade(q,q.kind==='tokens'?value.normalize('NFKC').replace(/\r\n?/g,'\n').trim():value).correct;
-const recordedGradeValid=a=>{const q=getQuestion(a.code);return grade(q,a.answer).correct===a.correct||formerGrade(q,a.answer)===a.correct;};
-const recordedScoreValid=s=>s.score===scoreSession(s).score||s.score===s.codes.filter((code,i)=>formerGrade(getQuestion(code),s.answers[i])).length*5;
+const formerGrade=(q,value,legacySql=false)=>grade(q.family==='X11'&&q.kind==='identifier'?{...q,kind:'term'}:q,legacySql&&q.kind==='tokens'?value.normalize('NFKC').replace(/\r\n?/g,'\n').trim():value).correct;
+const recordedGradeValid=a=>{const q=getQuestion(a.code);return grade(q,a.answer).correct===a.correct||formerGrade(q,a.answer,true)===a.correct;};
+const recordedScoreValid=s=>s.score===scoreSession(s).score||[false,true].some(legacySql=>s.score===s.codes.filter((code,i)=>formerGrade(getQuestion(code),s.answers[i],legacySql)).length*5);
 export function emptyState(){return{version:1,settings:{minutes:30,target:'2026',examDate:''},attempts:[],bookmarks:[],sessions:[],active:null};}
 export function validateState(value) {
   if(!exact(value,['version','settings','attempts','bookmarks','sessions','active'])||value.version!==1)throw new Error('지원하지 않는 기록 형식입니다. 백업을 확인하거나 기록을 삭제하세요.');
