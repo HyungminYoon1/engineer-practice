@@ -2,16 +2,16 @@
 
 ## Required flows
 
-1. First visit shows the 2026 original practice profile, a daily plan and an optional 20-item balanced diagnostic. No account or payment.
+1. First visit shows the 2026 original practice profile, a daily plan and an optional 20-item balanced diagnostic. No required account or payment; optional WEB LAB account login.
 2. Concept directory with Korean plain-language explanation, prerequisites, comparison, example and direct targeted practice. Cover programming, SQL/DB, OS/network, development/test/security rather than programming alone.
 3. C/Java/Python output prediction, SQLite result/written questions, numeric reasoning, scenario application and terminology input. Domain, difficulty and type filters; directly selectable families/conditions, next-family and reproducible codes. A different number/seed is a variant, not a new independent problem family. Written SQL declares a constrained answer shape and dialect, with literal-preserving formatting tolerance.
 4. In practice, typed answer, optional staged hint, confidence, one graded attempt, correct answer, worked explanation and replayable step/state/table view. Bookmark, next variant and concept links. Enter must not submit during Korean IME composition.
 5. Review targets weak/due concepts, keeps hinted correctness separate, allows error-cause classification and does not label one remembered answer as mastery.
 6. Twenty-item, 100-point, 150-minute mock session. Navigation and mark-for-later, unanswered count, autosaved drafts/resume, fixed question set, no answer/hint/grade disclosure before final submission. Absolute deadline survives reload/navigation and is checked before each edit. Timeout submits once; duplicate old submission preserves a newer session. Confirmed abandonment makes no completed score. Completed summary and full item review including unanswered items. Diagnostic is separate, untimed and includes both concepts and applied items per domain.
-7. Device-local retained results, import/export backup, only-own-data deletion with confirmation. Storage failure/corruption/unsupported version is explicit; no silent overwrite or fake save.
+7. Optional shared WEB LAB identity with app-separated cloud records, explicit guest import, offline durable queue, identity/revision/epoch guards and visible conflicts. Preserve all existing accounts and version-1 records. Device-local retained results, import/export backup, only-own-data deletion with confirmation. Storage failure/corruption/unsupported version is explicit; no silent overwrite or fake save.
 8. Accessible native controls, keyboard focus, readable code/tables, desktop and 320/390px layouts, reduced motion, print problem/answer separation. No fabricated population percentile, official grading or pass probability.
 9. Original authoring and technical source/provenance per family; all native code/SQL variants must execute and match expected answers before release. No publisher exam reproduction or live AI grading.
-10. WEB LAB maintains the accurate learning entry and real browser capture. This re-audit changes only engineer-practice metadata/capture; SENSE LAB and all other app records/metadata/images are preserved.
+10. WEB LAB maintains the accurate learning entry and real browser capture. The shared-account extension updates only the two affected learning-app entries/previews and a static account link; other app metadata/images and all unrelated app records are preserved.
 11. Twelve practical headings each link to original applied exercises and all related concepts. Clearly separate counts from complete detailed-criterion or official pass evidence. Display recommended review/concept/practice allocations for daily time settings.
 
 ## Content target and measured re-audit inventory

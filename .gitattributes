@@ -2,3 +2,5 @@
 *.png binary
 *.jpg binary
 *.pdf binary
+# Preserve whitespace inside the reproducible SDK's generated template literals.
+dist/vendor/neon.js -whitespace

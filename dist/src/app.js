@@ -1,3 +1,5 @@
+import {createAccountController} from './cloud/account.js';
+import {accountView} from './cloud/view.js';
 import { concepts, getConcept, groups, contentProfile } from './curriculum.js';
 import { allFamilies, itemFamilies, questionCodes, getQuestion, selectCodes, familyChoices, nextFamilyCode } from './questions.js';
 import { grade, shuffled, sessionCodes, scoreSession, conceptStatus, reviewConcepts, domainSummary, remainingSeconds, canEditSession, dailyPlan, nextVariant, DAY } from './engine.js';
@@ -6,10 +8,13 @@ import { coverageTopics, contentInventory, topicInventory } from './coverage.js'
 import { studyGuides, getStudyGuide } from './study-guides.js';
 import { el, button, questionBody, traceView, relatedConcepts, referenceLink, metric, emptyMessage } from './view.js';
 const $=id=>document.getElementById(id), content=$('content');
-const store=createStore({getItem:key=>window.localStorage.getItem(key),setItem:(key,value)=>window.localStorage.setItem(key,value),removeItem:key=>window.localStorage.removeItem(key)});
-const names={home:'오늘 학습',guide:'학습 길잡이',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',scope:'학습 범위',settings:'학습 기록 · 설정'};
+const storage={getItem:key=>window.localStorage.getItem(key),setItem:(key,value)=>window.localStorage.setItem(key,value),removeItem:key=>window.localStorage.removeItem(key)};
+const guest=createStore(storage);let store=guest;
+const names={home:'오늘 학습',guide:'학습 길잡이',concepts:'개념 학습',practice:'문제 풀이',review:'복습 노트',exam:'진단 · 모의시험',scope:'학습 범위',settings:'학습 기록 · 설정',account:'WEB LAB 계정'};
 let route='home',selectedGuide='code',selectedConcept='pointers',conceptQuery='',conceptGroup='all';
 let filters={group:'all',language:'all',difficulty:'all',concept:null},practiceCode='C01.0',practice=null,finishedSession=null,timer=0;
+const account=createAccountController({storage,guest,download:downloadText,onIdentity:()=>{store=account.store;practice=null;finishedSession=null;$('print-area').replaceChildren();route='account';},onChange:changed=>{store=account.store;updateAccountStatus();if(changed||route==='account')render();}});
+function updateAccountStatus(){const s=account.session;$('account-status').textContent=!s?'로그인 · 동기화':s.blocked||s.error?'동기화 확인 필요':s.busy?'동기화 중…':s.pendingCount?'기기에 저장 · 전송 대기':'계정 연결';$('storage-mode').textContent=s?'계정 기록 · 전송 대기본은 기기에 보관':'비로그인 · 이 브라우저에 저장';const msg=route==='account'?'':s?.error||(!s?account.auth.error||account.auth.message:'');$('account-notice').textContent=msg;$('account-notice').hidden=!msg;}
 const entropy=()=>crypto.getRandomValues(new Uint32Array(1))[0];
 function notice(message=store.error){$('storage-notice').textContent=message;$('storage-notice').hidden=!message;}
 function saveNotice(saved){notice(saved?'':store.error);}
@@ -84,7 +89,7 @@ function renderPractice(){
   form.addEventListener('submit',event=>{event.preventDefault();if(ctx.composing||ctx.graded)return;ctx.answer=input.value;const result=grade(q,ctx.answer);if(result.empty){notice('답안을 입력한 뒤 확인하세요.');input.focus();return;}
     ctx.graded=true;ctx.attemptId=crypto.randomUUID();ctx.result=result;
     const record={id:ctx.attemptId,code:q.code,answer:ctx.answer,correct:result.correct,hinted:ctx.hinted,confidence:ctx.confidence,elapsed:Math.min(86400000,Math.max(0,Math.round(performance.now()-ctx.started))),at:new Date().toISOString(),cause:'none'};
-    saveNotice(store.append(record));input.disabled=true;submit.disabled=true;hintButton.disabled=true;confidence.querySelector('select').disabled=true;renderFeedback();
+    const saved=store.append(record);saveNotice(saved);if(!saved&&account.session){ctx.graded=false;ctx.attemptId=null;return;}input.disabled=true;submit.disabled=true;hintButton.disabled=true;confidence.querySelector('select').disabled=true;renderFeedback();
   });
   function renderFeedback(){feedback.replaceChildren();if(!ctx.graded)return;card.querySelector('.question-body').replaceWith(questionBody(q,{showTitle:true}));card.querySelector('.question-id').textContent=q.code+' · 자체 제작';const result=ctx.result??grade(q,ctx.answer);const panel=el('section',{class:'feedback '+(result.correct?'hit':'miss'),role:'status'},el('h3',{},result.correct?'✓ 정답':'다시 확인해보세요'),el('p',{class:'small muted'},ctx.hinted?'힌트를 사용한 풀이로 기록했습니다.':'힌트 없이 작성한 풀이입니다.'),el('pre',{class:'expected-answer'},q.expected),el('p',{},q.explanation),relatedConcepts(q.conceptIds,openConcept));
     if(!result.correct)panel.append(chooseSelect('error-cause','틀린 이유',[['none','아직 분류하지 않음'],['concept','개념을 몰랐어요'],['trace','실행 순서를 놓쳤어요'],['calculation','계산 실수'],['term','용어를 혼동했어요'],['format','답안 형식이 달랐어요']],store.state.attempts.find(a=>a.id===ctx.attemptId)?.cause??'none',cause=>saveNotice(store.classify(ctx.attemptId,cause))));
@@ -113,7 +118,7 @@ function startSession(mode){
   if(store.state.active){go('exam');return;}
   if(mode==='mock'&&!window.confirm('20문항 모의시험을 시작할까요? 제한 시간은 150분이며, 다른 화면으로 이동해도 시간이 계속 흐릅니다.'))return;
   const now=Date.now(),session={id:crypto.randomUUID(),mode,startedAt:new Date(now).toISOString(),deadline:mode==='mock'?now+9000000:null,codes:sessionCodes(mode,entropy()),answers:Array(20).fill(''),flagged:[],index:0};
-  finishedSession=null;$('print-area').replaceChildren();saveNotice(store.active(session));go('exam');tick();
+  const saved=store.active(session);saveNotice(saved);if(!saved&&account.session)return;finishedSession=null;$('print-area').replaceChildren();go('exam');tick();
 }
 function finishSession(automatic=false){
   const current=store.state.active;if(!current)return;
@@ -121,7 +126,7 @@ function finishSession(automatic=false){
   const scored=scoreSession(current),endedAt=new Date().toISOString(),seconds=Math.min(86400,Math.max(0,Math.floor((Date.now()-Date.parse(current.startedAt))/1000)));
   const summary={id:current.id,mode:current.mode,endedAt,codes:[...current.codes],answers:[...current.answers],score:scored.score,seconds};
   const attempts=scored.items.map(item=>({id:crypto.randomUUID(),code:item.code,answer:item.answer,correct:item.correct,hinted:false,confidence:'unsure',elapsed:0,at:endedAt,cause:'none'}));
-  saveNotice(store.finish(summary,attempts));finishedSession=store.state.sessions.find(s=>s.id===summary.id)??null;route='exam';render();
+  const saved=store.finish(summary,attempts);saveNotice(saved);if(!saved&&account.session)return;finishedSession=store.state.sessions.find(s=>s.id===summary.id)??null;route='exam';render();
 }
 function renderExam(){
   const active=store.state.active;
@@ -139,7 +144,7 @@ function renderActive(session){
   const card=el('section',{class:'panel question-card'},el('div',{class:'question-meta'},chip(q.group),el('span',{class:'mono'},`문항 ${session.index+1}`)),questionBody(q)),aside=el('aside',{class:'panel answer-panel'});
   const input=el('textarea',{id:'exam-answer',rows:5,maxlength:1200,value:session.answers[session.index],spellcheck:'false'}),saved=el('p',{class:'answer-help'},'답안은 입력할 때 자동 저장됩니다. 제출 전에는 채점하지 않습니다.');
   const editable=()=>{const current=store.state.active;if(!current||current.id!==session.id)return false;if(!canEditSession(current)){finishSession(true);return false;}return true;};
-  input.addEventListener('input',()=>{if(!editable())return;const current=store.state.active;const next=structuredClone(current);next.answers[session.index]=input.value;const ok=store.active(next);saved.textContent=ok?'답안 저장됨':'화면에만 유지 · 저장 상태를 확인하세요.';saveNotice(ok);updateMap();});
+  input.addEventListener('input',()=>{if(!editable())return;const current=store.state.active;const next=structuredClone(current);next.answers[session.index]=input.value;const ok=store.active(next);saved.textContent=ok?(account.session?'기기에 저장 · 서버 동기화 상태는 상단에서 확인하세요.':'답안 저장됨'):'저장하지 못함 · 입력한 답안을 복사하고 저장 상태를 확인하세요.';saveNotice(ok);updateMap();});
   const map=el('div',{class:'exam-map'}),flag=el('input',{id:'exam-flag',type:'checkbox',checked:session.flagged.includes(session.index)});
   flag.addEventListener('change',()=>{if(!editable())return;const next=structuredClone(store.state.active);next.flagged=flag.checked?[...new Set([...next.flagged,session.index])]:next.flagged.filter(n=>n!==session.index);saveNotice(store.active(next));updateMap();});
   function move(index){if(!editable())return;const current=store.state.active;saveNotice(store.active({...structuredClone(current),index}));render();$('exam-answer')?.focus({preventScroll:true});}
@@ -159,18 +164,19 @@ function renderResult(session){
   }
 }
 function renderSettings(){
-  content.append(heading('학습 기록 · 설정','기록은 이 브라우저에만 저장됩니다. 백업 파일로 다른 기기에 옮길 수 있습니다.'));
+  content.append(heading('학습 기록 · 설정',account.session?'정보처리기사 계정 기록입니다. 초기화해도 인터넷보안 기록과 계정은 유지됩니다.':'비로그인 기록은 이 브라우저에 저장됩니다. 선택적 WEB LAB 로그인·동기화와 파일 백업을 이용할 수 있습니다.'));
   content.append(el('div',{class:'profile-box'},el('strong',{},'2026 대비'),el('p',{},'자체 제작 문제입니다. 2027~2029 출제기준 반영은 준비 중입니다.')));
   const settings=el('section',{class:'panel'},el('h2',{},'학습 계획'),chooseSelect('study-minutes','하루 학습 시간',[['15','15분'],['30','30분'],['60','60분']],store.state.settings.minutes,value=>saveNotice(store.settings({minutes:Number(value)}))));
   const examDate=el('input',{id:'exam-date',type:'date',min:'2000-01-01',max:'2099-12-31',value:store.state.settings.examDate,onChange:event=>{if(!event.target.checkValidity()){event.target.value=store.state.settings.examDate;notice('시험 예정일은 2000년부터 2099년까지 입력하세요.');return;}saveNotice(store.settings({examDate:event.target.value}));}});settings.append(el('div',{class:'field'},el('label',{for:'exam-date'},'시험 예정일 (선택)'),examDate),el('p',{class:'muted small'},'학습 시간은 오늘 계획의 길이를 선택하는 설정입니다. 복습 주기는 풀이 결과와 경과 시간을 기준으로 정합니다.'));
   const file=el('input',{id:'backup-file',type:'file',accept:'.json,application/json',class:'file-input'}),backup=el('section',{class:'panel'},el('h2',{},'기록 백업'),el('p',{},`최근 ${store.state.attempts.length}개 풀이, ${store.state.bookmarks.length}개 표시 문제, ${store.state.sessions.length}개 시험 기록.`),button('백업 내려받기',()=>downloadBackup(),'button subtle'),el('label',{for:'backup-file',class:'section-gap'},'백업 파일 복원'),file);
-  file.addEventListener('change',async()=>{const picked=file.files?.[0];if(!picked)return;try{if(picked.size>MAX_BACKUP_SIZE)throw new Error('백업 파일이 너무 큽니다.');const bytes=await picked.arrayBuffer();if(!file.isConnected||file.files?.[0]!==picked)return;const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);if(!window.confirm('이 앱의 현재 기록을 백업 파일의 기록으로 바꿀까요? 다른 앱의 기록은 변경하지 않습니다.'))return;const ok=store.restore(raw);finishedSession=null;practice=null;saveNotice(ok);render();tick();}catch{if(file.isConnected&&file.files?.[0]===picked)notice('백업 형식이나 저장 상태를 확인하세요. 올바르지 않은 파일은 복원하지 않았습니다.');}finally{if(file.files?.[0]===picked)file.value='';}});
-  backup.append(el('hr',{class:'divider'}),button('이 앱 기록 삭제',()=>{if(!window.confirm('정보처리기사 실기 학습실의 풀이·시험·설정 기록을 모두 삭제할까요? 다른 앱의 데이터는 삭제하지 않습니다.'))return;const ok=store.clear();if(ok){finishedSession=null;practice=null;}saveNotice(ok);render();},'button danger'));
+  file.addEventListener('change',async()=>{const targetStore=store,picked=file.files?.[0];if(!picked)return;try{if(picked.size>MAX_BACKUP_SIZE)throw new Error('백업 파일이 너무 큽니다.');const bytes=await picked.arrayBuffer();if(store!==targetStore||!file.isConnected||file.files?.[0]!==picked)return;const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);if(!window.confirm('이 앱의 현재 기록을 백업 파일의 기록으로 바꿀까요? 다른 앱의 기록은 변경하지 않습니다.'))return;const ok=store.restore(raw);finishedSession=null;practice=null;saveNotice(ok);render();tick();}catch{if(file.isConnected&&file.files?.[0]===picked)notice('백업 형식이나 저장 상태를 확인하세요. 올바르지 않은 파일은 복원하지 않았습니다.');}finally{if(file.files?.[0]===picked)file.value='';}});
+  backup.append(el('hr',{class:'divider'}),button('이 앱 기록 삭제',async()=>{if(!window.confirm('정보처리기사 실기 학습실의 풀이·시험·설정 기록을 모두 삭제할까요? 다른 앱의 데이터는 삭제하지 않습니다.'))return;const targetStore=store;const ok=await targetStore.clear();if(store!==targetStore)return;if(ok){finishedSession=null;practice=null;}saveNotice(ok);render();},'button danger'));
   content.append(el('div',{class:'settings-grid'},settings,backup),el('p',{class:'settings-note'},'풀이 최대 2048개·표시 문제 128개·완료 시험 20개를 보관합니다. 기록 개수 또는 전체 1,048,576자 한도를 넘으면 오래된 풀이부터 제외하며 진행 중 답안은 유지합니다. 동시 탭의 저장은 충돌할 수 있습니다. 같은 GitHub Pages 출처의 다른 앱도 브라우저 저장 공간에 접근할 수 있으므로 공용 기기에서는 사용 후 기록을 삭제하세요. 저장 실패나 손상은 안내하고 원본을 임의로 덮어쓰지 않습니다.'));
   content.append(el('section',{class:'panel section-gap'},el('h3',{},'시험 안내와 제작 범위'),el('p',{class:'small muted'},'공식 실기는 필답형 150분이며 합격기준은 60/100입니다. 이 앱의 문제는 자체 제작 학습 자료이고 영역별 출제 비율·공식 채점표·합격확률을 예측하지 않습니다. 코드·SQL 변형은 배포 전 실제 실행 결과를 검사합니다. 브라우저 안에서는 임의의 사용자 코드를 실행하거나 AI에 답안을 보내지 않습니다.'),referenceLink('exam')));
   if(store.state.sessions.length)content.append(el('h2',{class:'section-gap'},'완료한 시험'),sessionRows());
 }
-function downloadBackup(){const url=URL.createObjectURL(new Blob([store.export()],{type:'application/json;charset=utf-8'})),a=el('a',{href:url,download:'engineer-practice-backup.json'});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function downloadBackup(){downloadText(store.export(),'engineer-practice-backup.json');}
+function downloadText(text,name){const url=URL.createObjectURL(new Blob([text],{type:'application/json;charset=utf-8'})),a=el('a',{href:url,download:name});document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function buildPrintSheet(codes,answers){
   if(answers&&store.state.active)return;
   const sheet=el('div',{class:'print-sheet'},el('h1',{},answers?'정보처리기사 실기 학습실 · 정답과 해설':'정보처리기사 실기 학습실 · 문제지'),el('p',{class:'small'},'2026 대비 자체 제작 · '+codes.length+'문항'));
@@ -183,16 +189,17 @@ function render(){
   if(store.state.active&&['guide','concepts','practice','review','scope'].includes(route))route='exam';
   content.replaceChildren();$('page-label').textContent=names[route];
   for(const nav of document.querySelectorAll('[data-route]')){if(nav.dataset.route===route)nav.setAttribute('aria-current','page');else nav.removeAttribute('aria-current');}
-  ({home:renderHome,guide:renderGuide,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,scope:renderScope,settings:renderSettings})[route]();notice();updateClock();
+  ({home:renderHome,guide:renderGuide,concepts:renderConcepts,practice:renderPractice,review:renderReview,exam:renderExam,scope:renderScope,settings:renderSettings,account:()=>content.append(heading('WEB LAB 계정','기존 인터넷보안 계정으로 두 학습실을 이용하세요.'),accountView(account))})[route]();notice();updateClock();updateAccountStatus();
 }
 function updateClock(){const session=store.state.active;const seconds=session?remainingSeconds(session):null;$('session-clock').hidden=seconds===null;if(seconds!==null)$('session-clock').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 function tick(){updateClock();if(store.state.active?.mode==='mock'&&remainingSeconds(store.state.active)===0)finishSession(true);}
 for(const nav of document.querySelectorAll('[data-route]'))nav.addEventListener('click',()=>go(nav.dataset.route));
 window.addEventListener('hashchange',()=>{const value=location.hash.slice(1);if(Object.hasOwn(names,value)){route=value;render();}});
-window.addEventListener('storage',event=>{if(event.key!==KEY)return;store.refresh();if(!practice?.composing)render();});
+window.addEventListener('storage',event=>{if(account.session&&(event.key===account.session.key||event.key===null)){account.session.storageChanged();return;}if(!account.session&&(event.key===KEY||event.key===null)){guest.refresh();if(!practice?.composing)render();}});
+window.addEventListener('online',()=>void account.session?.flush({pull:true}));
 window.addEventListener('pagehide',()=>clearInterval(timer));
-window.addEventListener('focus',tick);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
+window.addEventListener('focus',()=>{tick();void account.checkIdentity();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){tick();void account.checkIdentity();}});
 window.addEventListener('pageshow',()=>{clearInterval(timer);timer=setInterval(tick,1000);tick();});
 route=Object.hasOwn(names,location.hash.slice(1))?location.hash.slice(1):'home';
-render();timer=setInterval(tick,1000);tick();
+render();timer=setInterval(tick,1000);tick();void account.restore();

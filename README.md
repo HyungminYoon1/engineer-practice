@@ -29,17 +29,20 @@
 
 ## 저장과 실행
 
-계정·서버·Neon·공개 랭킹·AI API를 사용하지 않습니다. 답안은 해당 브라우저의 `engineer-practice-v1`에만 저장합니다. 최대 2048회 풀이·128개 표시 문제·20회 완료 시험·진행 중 시험 1회를 보관합니다.
+로그인 없이 이용할 수 있습니다. 기존 인터넷보안 이메일·비밀번호가 **WEB LAB 계정**으로 이어지며, 선택적으로 로그인해 기기 간 진도를 동기화합니다. 인터넷보안과 정보처리기사 기록·초기화는 분리됩니다. 기존 비로그인 기록은 `engineer-practice-v1`에 남고, 확인 후 가져오기를 선택해야 계정에 합쳐집니다. 최대 2048회 풀이·128개 표시 문제·20회 완료 시험·진행 중 시험 1회를 보관합니다.
 총 저장량은 공백 정리한 JSON 기준 1,048,576자 이내이며 초과하면 오래된 풀이부터 정리합니다. 진행 중 답안과 설정은 이 정리로 삭제하지 않습니다. 읽기 좋은 JSON 백업의 들여쓰기·줄바꿈은 복원 시 저장 용량과 구분합니다. 입력 파일은 최대 4MiB이며 실제 기록은 기존 저장 한도를 지켜야 합니다. 복원은 기록을 임의로 잘라 넣지 않고 검증 후 교체하며, 복원과 삭제에는 확인 절차가 있습니다. 같은 출처의 다른 Pages 앱과 저장소를 읽을 수 있는 권한을 공유하므로 비밀 정보를 입력하지 마세요.
 
 ```sh
+npm ci
+npm run build
 npm test
 npm run check
+npm run test:browser
 npm run verify:native
 npm run verify:dialects
 npm run dev -- 0
 ```
 
-Node 22 이상. 실제 정답 검증에는 GCC(C11), JDK 17 이상, Python 3.11 이상이 필요합니다. DBMS별 검증은 Docker에서 네트워크·포트·호스트 마운트 없는 임시 PostgreSQL/MySQL만 사용하고 검증 후 제거합니다. 이것은 개발·CI용이며 실행 앱에는 DB가 없습니다. 사용자 코드를 서버에서 실행하지 않습니다. 런타임 npm 의존성은 없습니다.
+Node 22 이상. 실제 정답 검증에는 GCC(C11), JDK 17 이상, Python 3.11 이상이 필요합니다. DBMS별 검증은 Docker에서 네트워크·포트·호스트 마운트 없는 임시 PostgreSQL/MySQL만 사용하고 검증 후 제거합니다. 이것은 문제 정답 검증용 개발·CI 환경입니다. 선택적 계정 동기화에는 기존 Neon Auth와 별도 `engineer_private` 저장 공간을 사용합니다. 사용자 코드를 서버에서 실행하지 않습니다. 공식 Neon SDK를 고정 버전으로 자체 번들합니다. [계정 저장·복구 계약](docs/account-sync.md)을 참고하세요.
 
 GitHub Actions 검증 후 `dist`만 Pages에 배포합니다. 설계는 [architecture.md](architecture.md), 변경 결정은 [결정 기록](docs/decisions.md), 실제 검증 범위는 [검증 기록](docs/verification.md)을 참고하세요.

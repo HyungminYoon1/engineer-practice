@@ -109,3 +109,21 @@
 - Rationale: approved public artifacts remain separate from private environment and test evidence.
 - Affected: local Git configuration, .gitignore, .github/workflows/pages.yml, docs/verification.md.
 - Review: normal push only after origin checks; record remote CI, deployed source revision and public HTTP/hash/browser validation separately. Unrelated service files/preview images must remain unchanged.
+
+## D13 — Shared WEB LAB identity, separate learning data (2026-10-23)
+
+- Context: user explicitly approved extending the existing Internet Security account, optional Engineer login/sync, preservation, verification and production release.
+- Options: separate identities/projects; migrate all data to a common application schema; reuse the existing Auth realm with independent app storage.
+- Decision: same managed UUID/email/password, pinned identical SDK dependency graph, new engineer_private/engineer_service, strict expected-user/app guards and forced RLS. The gallery only links to an account screen. Existing study tables and guest keys are preserved; migration files are additive.
+- Rationale: no re-registration or identity/data copying, while access control, reset and application releases remain separate. Same-origin Pages paths/localStorage are not confidentiality boundaries.
+- Affected: architecture/requirements/README, cloud adapters/controller/view, SQL/migration tools, API contract, both app UIs and WEB LAB metadata.
+- Review: actual Auth/RPC cross-user and cross-app checks, current browser cookie restrictions, existing row evidence, no provider origin expansion or paid upgrade. A shared-browser logout affects both apps, not every device.
+
+## D14 — Durable snapshot CAS, explicit conflict recovery and retained grading (2026-10-23)
+
+- Context: version-1 typed-answer records and historical grading must remain readable across devices and failed responses.
+- Options: last-write-wins snapshots; copy the more complex Internet Security server-exam engine; bounded CAS snapshots with three-way client reconciliation.
+- Decision: preserve version-1 content/grade/timer semantics and existing ordinary retention. Server enforces identity, shape, bounds, revision, epoch and operation idempotency; client grades remain educational, not attested. Durable requests precede sending; later edits survive lost responses. Conflicts, malformed storage, other-tab changes and reset epochs pause automatic writes. Explicit import preserves guest bytes and excludes guest settings/active exam. Merge/import overflow requires backup rather than implicit trimming. Account cache cap 8 Mi characters, learning cap unchanged, receipts 128. Logout preserves account-bound local recovery copies.
+- Rationale: protect existing typed answers and legacy grades without inventing an exam authority or silently selecting one device's clock. Reuse established guest mutations through an isolated memory adapter.
+- Affected: cloud/sync.js, session.js, app.js, database/001-account-sync.sql, docs/account-sync.md, domain/SQL/browser tests.
+- Review: retry after committed-but-lost responses, new edits during flight, reset in flight, mixed active/completed exam, capacity, identity switch, local readback failure. LocalStorage comparisons are not atomic across tabs. Browser storage failure can leave an input unsaved; UI must not say it was recorded.
